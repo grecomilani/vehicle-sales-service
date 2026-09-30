@@ -26,3 +26,11 @@ seção `[Unreleased]` é convertida na nova versão.
   testes e verificação de cobertura mínima de 80% em todo Pull Request e push
   para `develop` e `main`. Publica o resumo de cobertura no job e o relatório
   do JaCoCo como artefato (`jacoco-report`).
+- CI também executa em push para branches `feature/**`.
+- Job `auto-pull-request` no pipeline: com o build verde, abre automaticamente o
+  PR `feature/* -> develop` e, a cada push em `develop`, o PR de release
+  `develop -> main` (sem duplicar PRs já abertos). Aceita o secret opcional
+  `PR_AUTOMATION_TOKEN`.
+- Ruleset `protect-main-develop` (`.github/rulesets/`) para importação no GitHub:
+  bloqueia push direto, force push e exclusão de `main`/`develop` e exige PR com
+  o check de build/testes/cobertura verde.

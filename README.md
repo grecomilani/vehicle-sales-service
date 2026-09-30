@@ -45,6 +45,23 @@ para `develop` e `main`:
    a cobertura ficar abaixo do mínimo.
 4. Publicação do resumo de cobertura no job e do relatório completo como
    artefato (`jacoco-report`).
+5. **Pull Request automático** (job `auto-pull-request`), quando o build está verde:
+   - push em `feature/*` abre o PR para `develop`;
+   - push em `develop` abre o PR de release para `main`.
+
+   Se já houver um PR aberto para o mesmo par de branches, nada é feito.
+
+### Configuração necessária no GitHub
+
+- **Permitir que o Actions crie PRs:** *Settings → Actions → General → Workflow
+  permissions* → marcar *Allow GitHub Actions to create and approve pull requests*.
+  Alternativa: criar o secret `PR_AUTOMATION_TOKEN` com um token (PAT) que tenha
+  permissão de *Pull requests: write*.
+- **Proteção de `main` e `develop`:** *Settings → Rules → Rulesets → New ruleset →
+  Import a ruleset* e selecionar
+  [`.github/rulesets/protect-main-develop.json`](.github/rulesets/protect-main-develop.json).
+  O ruleset bloqueia push direto, force push e exclusão das branches e exige PR
+  com o check *Build, testes e cobertura (mínimo 80%)* verde.
 
 ## Como executar localmente
 
