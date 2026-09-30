@@ -1,5 +1,7 @@
 # Vehicle Sales Service
 
+[![CI](https://github.com/grecomilani/vehicle-sales-service/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/grecomilani/vehicle-sales-service/actions/workflows/ci.yml)
+
 Serviço de **venda de veículos** da plataforma de revenda de veículos automotores,
 desenvolvido como Trabalho Substitutivo do Tech Challenge — Fase 4 (Pós-Tech SOAT).
 
@@ -31,6 +33,18 @@ listagem e compra, e usa um banco de dados segregado.
 - `feature/<nome>`: criada a partir de `develop` e integrada via Pull Request.
 
 Toda alteração deve ser registrada no [CHANGELOG.md](CHANGELOG.md).
+
+## CI/CD
+
+O workflow [`ci.yml`](.github/workflows/ci.yml) roda em todo Pull Request e push
+para `develop` e `main`:
+
+1. Build do projeto com JDK 25.
+2. Execução dos testes automatizados.
+3. Verificação da cobertura mínima de **80%** (JaCoCo). O pipeline falha se
+   a cobertura ficar abaixo do mínimo.
+4. Publicação do resumo de cobertura no job e do relatório completo como
+   artefato (`jacoco-report`).
 
 ## Como executar localmente
 

@@ -22,3 +22,7 @@ seção `[Unreleased]` é convertida na nova versão.
   o build falha se a cobertura ficar abaixo do mínimo.
 - Testes iniciais: carregamento do contexto e endpoint `/actuator/health`.
 - `.gitattributes` para padronizar finais de linha (LF, e CRLF para scripts `.cmd`).
+- Pipeline de CI no GitHub Actions (`.github/workflows/ci.yml`): executa build,
+  testes e verificação de cobertura mínima de 80% em todo Pull Request e push
+  para `develop` e `main`. Publica o resumo de cobertura no job e o relatório
+  do JaCoCo como artefato (`jacoco-report`).
