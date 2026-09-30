@@ -36,8 +36,8 @@ Toda alteração deve ser registrada no [CHANGELOG.md](CHANGELOG.md).
 
 ## CI/CD
 
-O workflow [`ci.yml`](.github/workflows/ci.yml) roda em todo Pull Request e push
-para `develop` e `main`:
+O workflow [`ci.yml`](.github/workflows/ci.yml) roda em todo Pull Request para
+`develop`/`main` e em todo push para `feature/**`, `develop` e `main`:
 
 1. Build do projeto com JDK 25.
 2. Execução dos testes automatizados.
