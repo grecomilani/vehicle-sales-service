@@ -14,3 +14,11 @@ seção `[Unreleased]` é convertida na nova versão.
 ### Added
 - Estrutura inicial do repositório: `README.md`, `.gitignore`, `.editorconfig`
   e `CHANGELOG.md`.
+- Projeto Spring Boot 4.1.1 com Java 25 (LTS) e Maven Wrapper (Maven 3.9.11).
+- Dependências base: Spring Web MVC, Validation e Actuator (endpoints `health` e
+  `info`, com probes de liveness/readiness habilitadas).
+- Aplicação configurada na porta `8081` (sobrescrevível via `SERVER_PORT`).
+- JaCoCo 0.8.15 com gate de cobertura mínima de 80% de linhas na fase `verify`;
+  o build falha se a cobertura ficar abaixo do mínimo.
+- Testes iniciais: carregamento do contexto e endpoint `/actuator/health`.
+- `.gitattributes` para padronizar finais de linha (LF, e CRLF para scripts `.cmd`).
