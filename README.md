@@ -1,5 +1,7 @@
 # Vehicle Sales Service
 
+[![CI](https://github.com/grecomilani/vehicle-sales-service/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/grecomilani/vehicle-sales-service/actions/workflows/ci.yml)
+
 Serviço de **venda de veículos** da plataforma de revenda de veículos automotores,
 desenvolvido como Trabalho Substitutivo do Tech Challenge — Fase 4 (Pós-Tech SOAT).
 
@@ -31,6 +33,35 @@ listagem e compra, e usa um banco de dados segregado.
 - `feature/<nome>`: criada a partir de `develop` e integrada via Pull Request.
 
 Toda alteração deve ser registrada no [CHANGELOG.md](CHANGELOG.md).
+
+## CI/CD
+
+O workflow [`ci.yml`](.github/workflows/ci.yml) roda em todo Pull Request para
+`develop`/`main` e em todo push para `feature/**`, `develop` e `main`:
+
+1. Build do projeto com JDK 25.
+2. Execução dos testes automatizados.
+3. Verificação da cobertura mínima de **80%** (JaCoCo). O pipeline falha se
+   a cobertura ficar abaixo do mínimo.
+4. Publicação do resumo de cobertura no job e do relatório completo como
+   artefato (`jacoco-report`).
+5. **Pull Request automático** (job `auto-pull-request`), quando o build está verde:
+   - push em `feature/*` abre o PR para `develop`;
+   - push em `develop` abre o PR de release para `main`.
+
+   Se já houver um PR aberto para o mesmo par de branches, nada é feito.
+
+### Configuração necessária no GitHub
+
+- **Permitir que o Actions crie PRs:** *Settings → Actions → General → Workflow
+  permissions* → marcar *Allow GitHub Actions to create and approve pull requests*.
+  Alternativa: criar o secret `PR_AUTOMATION_TOKEN` com um token (PAT) que tenha
+  permissão de *Pull requests: write*.
+- **Proteção de `main` e `develop`:** *Settings → Rules → Rulesets → New ruleset →
+  Import a ruleset* e selecionar
+  [`.github/rulesets/protect-main-develop.json`](.github/rulesets/protect-main-develop.json).
+  O ruleset bloqueia push direto, force push e exclusão das branches e exige PR
+  com o check *Build, testes e cobertura (mínimo 80%)* verde.
 
 ## Como executar localmente
 
