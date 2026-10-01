@@ -2,6 +2,7 @@ package com.grecomilani.vehiclesales.infrastructure.web.internal;
 
 import com.grecomilani.vehiclesales.application.usecase.SyncVehicleResult;
 import com.grecomilani.vehiclesales.application.usecase.SyncVehicleUseCase;
+import com.grecomilani.vehiclesales.infrastructure.web.VehicleResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

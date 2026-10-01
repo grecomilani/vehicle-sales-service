@@ -76,6 +76,28 @@ infrastructure/  Adaptadores: web (controllers), persistência (JPA) e configura
 
 ## API
 
+### Endpoints públicos (consumidos pelo frontend)
+
+| Método | Rota | Descrição |
+|---|---|---|
+| `GET` | `/vehicles/available?page=0&size=20` | Veículos à venda, do mais barato para o mais caro |
+
+A listagem é paginada: `page` começa em `0`, e `size` tem padrão `20` e máximo
+`100`. Exemplo de resposta:
+
+```json
+{
+  "content": [
+    {"id": "3f1c2a4e-...", "brand": "Fiat", "model": "Uno", "year": 2015,
+     "color": "Branco", "price": 30000.00, "status": "AVAILABLE"}
+  ],
+  "page": 0,
+  "size": 20,
+  "totalElements": 1,
+  "totalPages": 1
+}
+```
+
 ### Endpoints internos (chamados pelo `vehicle-platform-api`)
 
 | Método | Rota | Descrição |

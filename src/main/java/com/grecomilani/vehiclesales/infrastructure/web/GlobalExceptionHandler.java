@@ -11,6 +11,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.util.Map;
@@ -41,6 +42,23 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ex.getBindingResult().getFieldErrors()
                 .forEach(error -> errors.putIfAbsent(error.getField(), error.getDefaultMessage()));
 
+        return invalidData(errors, headers);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleHandlerMethodValidationException(HandlerMethodValidationException ex,
+                                                                            HttpHeaders headers,
+                                                                            HttpStatusCode status,
+                                                                            WebRequest request) {
+        Map<String, String> errors = new TreeMap<>();
+        ex.getParameterValidationResults().forEach(result -> errors.putIfAbsent(
+                result.getMethodParameter().getParameterName(),
+                result.getResolvableErrors().getFirst().getDefaultMessage()));
+
+        return invalidData(errors, headers);
+    }
+
+    private static ResponseEntity<Object> invalidData(Map<String, String> errors, HttpHeaders headers) {
         ProblemDetail body = problem(HttpStatus.BAD_REQUEST, "Dados inválidos",
                 "Um ou mais campos estão inválidos.");
         body.setProperty("errors", errors);
