@@ -34,3 +34,12 @@ seção `[Unreleased]` é convertida na nova versão.
 - Ruleset `protect-main-develop` (`.github/rulesets/`) para importação no GitHub:
   bloqueia push direto, force push e exclusão de `main`/`develop` e exige PR com
   o check de build/testes/cobertura verde.
+- Banco de dados PostgreSQL exclusivo do serviço de vendas: Spring Data JPA,
+  driver PostgreSQL e Flyway (migrações em `src/main/resources/db/migration`).
+  Conexão configurável pelas variáveis `DB_HOST`, `DB_PORT`, `DB_NAME`,
+  `DB_USERNAME` e `DB_PASSWORD`. O Hibernate apenas valida o schema
+  (`ddl-auto: validate`); o schema é gerido pelo Flyway.
+- `compose.yaml` com PostgreSQL 17 para desenvolvimento local, exposto na porta
+  `5433` para não conflitar com o banco do `vehicle-platform-api`.
+- Testes de integração com Testcontainers (PostgreSQL 17 real), incluindo teste
+  de conexão com o banco.

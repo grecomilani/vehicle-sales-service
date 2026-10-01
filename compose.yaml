@@ -1,0 +1,21 @@
+# Banco de dados exclusivo do serviço de vendas (ambiente local).
+services:
+  vehicle-sales-db:
+    image: postgres:17-alpine
+    container_name: vehicle-sales-db
+    environment:
+      POSTGRES_DB: vehicle_sales
+      POSTGRES_USER: vehicle_sales
+      POSTGRES_PASSWORD: vehicle_sales
+    ports:
+      - "5433:5432"
+    volumes:
+      - vehicle-sales-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vehicle_sales -d vehicle_sales"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  vehicle-sales-db-data:

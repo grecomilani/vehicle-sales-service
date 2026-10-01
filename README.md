@@ -23,8 +23,8 @@ listagem e compra, e usa um banco de dados segregado.
 - Java 25 (LTS)
 - Spring Boot
 - Maven
-- PostgreSQL
-- JUnit 5 + JaCoCo (cobertura mínima de 80%)
+- PostgreSQL 17 (banco exclusivo deste serviço) + Flyway
+- JUnit 5 + Testcontainers + JaCoCo (cobertura mínima de 80%)
 
 ## Fluxo de trabalho (Git Flow)
 
@@ -65,13 +65,33 @@ O workflow [`ci.yml`](.github/workflows/ci.yml) roda em todo Pull Request para
 
 ## Como executar localmente
 
-Pré-requisito: JDK 25. Não é preciso instalar o Maven: o projeto usa o Maven Wrapper.
+Pré-requisitos: JDK 25 e Docker. Não é preciso instalar o Maven: o projeto usa o
+Maven Wrapper.
 
-```bash
-./mvnw spring-boot:run
-```
+1. Suba o banco de dados do serviço (PostgreSQL na porta `5433`):
 
+   ```bash
+   docker compose up -d
+   ```
+
+2. Inicie a aplicação:
+
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+
+As migrações do Flyway são aplicadas automaticamente na inicialização.
 A aplicação sobe na porta `8081` (altere com a variável `SERVER_PORT`).
+
+| Variável | Padrão | Descrição |
+|---|---|---|
+| `SERVER_PORT` | `8081` | Porta HTTP da aplicação |
+| `DB_HOST` | `localhost` | Host do PostgreSQL |
+| `DB_PORT` | `5433` | Porta do PostgreSQL |
+| `DB_NAME` | `vehicle_sales` | Nome do banco |
+| `DB_USERNAME` | `vehicle_sales` | Usuário do banco |
+| `DB_PASSWORD` | `vehicle_sales` | Senha do banco |
+
 Para verificar se ela está no ar:
 
 ```bash
@@ -83,6 +103,9 @@ curl http://localhost:8081/actuator/health
 ```bash
 ./mvnw verify
 ```
+
+Os testes de integração usam **Testcontainers** para subir um PostgreSQL real,
+então o Docker precisa estar em execução.
 
 O comando executa os testes e gera o relatório de cobertura do JaCoCo em
 `target/site/jacoco/index.html`. O build **falha** se a cobertura de linhas

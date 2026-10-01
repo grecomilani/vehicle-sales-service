@@ -1,6 +1,16 @@
 spring:
   application:
     name: vehicle-sales-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:vehicle_sales}
+    username: ${DB_USERNAME:vehicle_sales}
+    password: ${DB_PASSWORD:vehicle_sales}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    locations: classpath:db/migration
 
 server:
   port: ${SERVER_PORT:8081}
