@@ -59,30 +59,33 @@ jobs:
           path: target/site/jacoco/
           if-no-files-found: ignore
 
-  # Git Flow: com o build verde, abre automaticamente o Pull Request
+  # Git Flow automatizado: com o build verde, abre o Pull Request e habilita
+  # o merge automático
   #   feature/*  -> develop
   #   develop    -> main (release)
-  # Se já existir um PR aberto para o mesmo par de branches, nada é feito.
+  # O merge acontece quando todos os checks obrigatórios do PR estiverem verdes.
+  # Para segurar um PR (ex.: revisão manual), adicione a label "hold".
   auto-pull-request:
-    name: Abrir Pull Request automático
+    name: Abrir Pull Request e merge automático
     needs: build-and-test
     if: >-
       github.event_name == 'push' &&
       (startsWith(github.ref_name, 'feature/') || github.ref_name == 'develop')
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
     env:
-      # PR_AUTOMATION_TOKEN (opcional): PAT com permissão de Pull requests.
-      # Com ele, o PR é aberto em nome do dono do token e dispara os workflows
-      # de pull_request. Sem ele, usa o GITHUB_TOKEN do Actions.
+      # PR_AUTOMATION_TOKEN: PAT do dono do repositório. É necessário para o
+      # fluxo completo: merges feitos com o GITHUB_TOKEN padrão não disparam
+      # novos workflows, então o merge na develop não abriria a release.
       GH_TOKEN: ${{ secrets.PR_AUTOMATION_TOKEN || github.token }}
+      HAS_PAT: ${{ secrets.PR_AUTOMATION_TOKEN != '' }}
       GH_REPO: ${{ github.repository }}
       HEAD_BRANCH: ${{ github.ref_name }}
 
     steps:
-      - name: Criar Pull Request
+      - name: Abrir PR e habilitar merge automático
         run: |
           if [ "$HEAD_BRANCH" = "develop" ]; then
             BASE_BRANCH=main
@@ -92,25 +95,51 @@ jobs:
             TITLE="${HEAD_BRANCH}"
           fi
 
-          OPEN_PRS=$(gh pr list --head "$HEAD_BRANCH" --base "$BASE_BRANCH" --state open --json number --jq 'length')
-          if [ "$OPEN_PRS" != "0" ]; then
-            echo "Já existe um PR aberto de $HEAD_BRANCH para $BASE_BRANCH. Nada a fazer."
+          PR_NUMBER=$(gh pr list --head "$HEAD_BRANCH" --base "$BASE_BRANCH" --state open --json number --jq '.[0].number // empty')
+
+          if [ -n "$PR_NUMBER" ]; then
+            echo "PR #$PR_NUMBER já aberto de $HEAD_BRANCH para $BASE_BRANCH."
+          else
+            AHEAD_BY=$(gh api "repos/$GH_REPO/compare/$BASE_BRANCH...$HEAD_BRANCH" --jq '.ahead_by')
+            if [ "$AHEAD_BY" = "0" ]; then
+              echo "$HEAD_BRANCH não tem commits novos em relação a $BASE_BRANCH. Nada a fazer."
+              exit 0
+            fi
+
+            COMMITS=$(gh api "repos/$GH_REPO/compare/$BASE_BRANCH...$HEAD_BRANCH" \
+              --jq '.commits[] | "- " + (.commit.message | split("\n")[0])')
+
+            BODY=$(printf 'PR aberto automaticamente pelo pipeline de CI (Git Flow).\n\n**%s** -> **%s**\n\n### Commits\n%s\n\n### Checklist\n- [ ] CHANGELOG.md atualizado\n- [ ] Build, testes e cobertura (mínimo 80%%) verdes\n\n> Merge automático habilitado. Para segurar este PR, adicione a label `hold`.\n' \
+              "$HEAD_BRANCH" "$BASE_BRANCH" "$COMMITS")
+
+            if ! PR_URL=$(gh pr create --base "$BASE_BRANCH" --head "$HEAD_BRANCH" --title "$TITLE" --body "$BODY"); then
+              if [ "$HAS_PAT" = "true" ]; then
+                echo "::error::Não foi possível criar o PR com o PR_AUTOMATION_TOKEN. Verifique se o token tem acesso a este repositório e as permissões Contents, Pull requests e Workflows (Read and write), e se não expirou."
+              else
+                echo "::error::Não foi possível criar o PR com o GITHUB_TOKEN. Habilite em Settings > Actions > General > Workflow permissions a opção 'Allow GitHub Actions to create and approve pull requests', ou configure o secret PR_AUTOMATION_TOKEN."
+              fi
+              exit 1
+            fi
+            PR_NUMBER="${PR_URL##*/}"
+            echo "PR #$PR_NUMBER criado: $PR_URL"
+          fi
+
+          if gh pr view "$PR_NUMBER" --json labels --jq '.labels[].name' | grep -qx 'hold'; then
+            echo "PR #$PR_NUMBER está com a label 'hold'. Merge automático não habilitado."
             exit 0
           fi
 
-          AHEAD_BY=$(gh api "repos/$GH_REPO/compare/$BASE_BRANCH...$HEAD_BRANCH" --jq '.ahead_by')
-          if [ "$AHEAD_BY" = "0" ]; then
-            echo "$HEAD_BRANCH não tem commits novos em relação a $BASE_BRANCH. Nada a fazer."
-            exit 0
+          if [ "$HAS_PAT" != "true" ]; then
+            echo "::warning::Secret PR_AUTOMATION_TOKEN não configurado: o merge será feito com o GITHUB_TOKEN e não disparará o pipeline da branch de destino."
           fi
 
-          COMMITS=$(gh api "repos/$GH_REPO/compare/$BASE_BRANCH...$HEAD_BRANCH" \
-            --jq '.commits[] | "- " + (.commit.message | split("\n")[0])')
-
-          BODY=$(printf 'PR aberto automaticamente pelo pipeline de CI (Git Flow).\n\n**%s** -> **%s**\n\n### Commits\n%s\n\n### Checklist\n- [ ] CHANGELOG.md atualizado\n- [ ] Build, testes e cobertura (mínimo 80%%) verdes\n' \
-            "$HEAD_BRANCH" "$BASE_BRANCH" "$COMMITS")
-
-          if ! gh pr create --base "$BASE_BRANCH" --head "$HEAD_BRANCH" --title "$TITLE" --body "$BODY"; then
-            echo "::error::Não foi possível criar o PR. Habilite em Settings > Actions > General > Workflow permissions a opção 'Allow GitHub Actions to create and approve pull requests', ou configure o secret PR_AUTOMATION_TOKEN."
+          # Com checks pendentes, o GitHub agenda o merge (auto-merge). Se o PR já
+          # estiver pronto para merge, o auto-merge é recusado e o merge é feito na hora.
+          if gh pr merge "$PR_NUMBER" --auto --merge; then
+            echo "Merge automático habilitado no PR #$PR_NUMBER."
+          elif gh pr merge "$PR_NUMBER" --merge; then
+            echo "PR #$PR_NUMBER mergeado."
+          else
+            echo "::error::Não foi possível fazer o merge do PR #$PR_NUMBER. Verifique se 'Allow auto-merge' está habilitado em Settings > General e se os checks obrigatórios passaram."
             exit 1
           fi

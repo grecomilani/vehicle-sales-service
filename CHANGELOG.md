@@ -97,3 +97,10 @@ seção `[Unreleased]` é convertida na nova versão.
 - Listagem de veículos vendidos (`GET /vehicles/sold`): retorna apenas os
   veículos `SOLD` (pagamento confirmado), ordenados por preço do mais barato
   para o mais caro, com a mesma paginação da listagem de veículos à venda.
+
+### Changed
+- Pipeline: o job `auto-pull-request` passa a habilitar o merge automático dos
+  PRs que abre (`feature/* -> develop` e `develop -> main`). O merge acontece
+  quando os checks obrigatórios ficam verdes, e o PR pode ser segurado com a
+  label `hold`. O fluxo completo exige o secret `PR_AUTOMATION_TOKEN` e a opção
+  *Allow auto-merge* do repositório.
