@@ -43,6 +43,8 @@ class VehicleListingIntegrationTest {
         createVehicle("Onix", "70000.00", "AVAILABLE");
         createVehicle("Gol", "45000.00", "RESERVED");
         createVehicle("Corolla", "15000.00", "SOLD");
+        createVehicle("Hilux", "250000.00", "SOLD");
+        createVehicle("Ka", "9000.00", "SOLD");
     }
 
     @Test
@@ -63,6 +65,15 @@ class VehicleListingIntegrationTest {
                 .andExpect(jsonPath("$.size").value(2))
                 .andExpect(jsonPath("$.totalElements").value(3))
                 .andExpect(jsonPath("$.totalPages").value(2));
+    }
+
+    @Test
+    void shouldListOnlySoldVehiclesOrderedByPriceAscending() throws Exception {
+        mockMvc.perform(get("/vehicles/sold"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[*].model", contains("Ka", "Corolla", "Hilux")))
+                .andExpect(jsonPath("$.content[*].status", contains("SOLD", "SOLD", "SOLD")))
+                .andExpect(jsonPath("$.totalElements").value(3));
     }
 
     private void createVehicle(String model, String price, String status) throws Exception {

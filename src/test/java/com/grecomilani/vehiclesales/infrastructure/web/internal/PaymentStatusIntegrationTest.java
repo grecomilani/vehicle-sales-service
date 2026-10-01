@@ -77,6 +77,10 @@ class PaymentStatusIntegrationTest {
         // pagamento já efetuado não pode ser cancelado
         updatePayment(paymentCode, "CANCELED").andExpect(status().isConflict());
         assertThat(vehicleStatus()).isEqualTo("SOLD");
+
+        // o veículo passa a aparecer na listagem de vendidos
+        mockMvc.perform(get("/vehicles/sold"))
+                .andExpect(jsonPath("$.content[*].id", hasItem(vehicleId.toString())));
     }
 
     @Test
