@@ -1,0 +1,90 @@
+name: CD
+
+# Deploy automático: a cada merge na main (release do Git Flow), a imagem é
+# publicada no GitHub Container Registry e implantada em um cluster Kubernetes
+# (kind) criado no próprio runner, seguida de um smoke test ponta a ponta.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  KIND_VERSION: v0.33.0
+  METRICS_SERVER_VERSION: v0.8.1
+  CLUSTER_NAME: revenda
+  NAMESPACE: revenda-veiculos
+  IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  deploy:
+    name: Deploy no Kubernetes (kind) e smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Build da imagem
+        run: docker build -t "$IMAGE:${{ github.sha }}" -t "$IMAGE:latest" .
+
+      - name: Publicar a imagem no GitHub Container Registry
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker push "$IMAGE:${{ github.sha }}"
+          docker push "$IMAGE:latest"
+
+      - name: Criar o cluster kind
+        run: |
+          curl -sSfLo "$RUNNER_TEMP/kind" "https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}/kind-linux-amd64"
+          chmod +x "$RUNNER_TEMP/kind"
+          sudo mv "$RUNNER_TEMP/kind" /usr/local/bin/kind
+          kind version
+          kind create cluster --name "$CLUSTER_NAME" --wait 120s
+          kubectl cluster-info
+
+      - name: Instalar o metrics-server (métricas de CPU para o HPA)
+        run: |
+          kubectl apply -f "https://github.com/kubernetes-sigs/metrics-server/releases/download/${METRICS_SERVER_VERSION}/components.yaml"
+          # No kind, o kubelet usa certificado autoassinado
+          kubectl -n kube-system patch deployment metrics-server --type=json \
+            -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
+
+      - name: Carregar a imagem no cluster
+        run: kind load docker-image "$IMAGE:${{ github.sha }}" --name "$CLUSTER_NAME"
+
+      - name: Deploy (kubectl apply -k)
+        run: |
+          # Fixa a imagem na versão deste commit
+          sed -i "s/newTag: latest/newTag: ${{ github.sha }}/" k8s/kustomization.yaml
+          kubectl apply -k k8s/
+
+      - name: Aguardar o rollout
+        run: |
+          kubectl -n "$NAMESPACE" rollout status statefulset/vehicle-sales-db --timeout=180s
+          kubectl -n "$NAMESPACE" rollout status deployment/vehicle-sales-service --timeout=360s
+          kubectl -n "$NAMESPACE" get pods,services,hpa
+          kubectl -n kube-system rollout status deployment/metrics-server --timeout=120s || true
+
+      - name: Smoke test
+        run: |
+          kubectl -n "$NAMESPACE" port-forward service/vehicle-sales-service 8081:8081 > /tmp/port-forward.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://localhost:8081/actuator/health > /dev/null && break; sleep 2; done
+          .github/scripts/smoke-test.sh http://localhost:8081
+
+      - name: Diagnóstico
+        if: failure()
+        run: |
+          kubectl -n "$NAMESPACE" get all || true
+          kubectl -n "$NAMESPACE" describe pods || true
+          kubectl -n "$NAMESPACE" get events --sort-by=.lastTimestamp || true
+          kubectl -n "$NAMESPACE" logs -l app.kubernetes.io/name=vehicle-sales-service --tail=200 --all-containers || true
