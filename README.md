@@ -22,6 +22,7 @@ listagem e compra, e usa um banco de dados segregado.
 
 - Java 25 (LTS)
 - Spring Boot
+- springdoc-openapi (Swagger UI)
 - Maven
 - PostgreSQL 17 (banco exclusivo deste serviço) + Flyway
 - JUnit 5 + Testcontainers + JaCoCo (cobertura mínima de 80%)
@@ -89,6 +90,9 @@ infrastructure/  Adaptadores: web (controllers), persistência (JPA) e configura
 ```
 
 ## API
+
+Documentação interativa (Swagger UI): <http://localhost:8081/swagger-ui.html>
+· especificação OpenAPI: <http://localhost:8081/v3/api-docs>
 
 ### Endpoints públicos (consumidos pelo frontend)
 

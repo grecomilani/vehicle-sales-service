@@ -23,6 +23,16 @@ app:
   # Fuso horário da revenda, usado nas regras que dependem da data atual
   time-zone: ${APP_TIME_ZONE:America/Sao_Paulo}
 
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+  api-docs:
+    path: /v3/api-docs
+
+api:
+  version: '@project.version@'
+
 management:
   endpoints:
     web:

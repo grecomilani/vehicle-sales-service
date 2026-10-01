@@ -97,6 +97,9 @@ seção `[Unreleased]` é convertida na nova versão.
 - Listagem de veículos vendidos (`GET /vehicles/sold`): retorna apenas os
   veículos `SOLD` (pagamento confirmado), ordenados por preço do mais barato
   para o mais caro, com a mesma paginação da listagem de veículos à venda.
+- Documentação da API com OpenAPI 3 (springdoc-openapi 3.1.1): Swagger UI em
+  `/swagger-ui.html` e especificação em `/v3/api-docs`, com os endpoints
+  agrupados por assunto e descritos.
 
 ### Changed
 - Pipeline: o job `auto-pull-request` passa a habilitar o merge automático dos
