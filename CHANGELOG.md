@@ -43,3 +43,18 @@ seção `[Unreleased]` é convertida na nova versão.
   `5433` para não conflitar com o banco do `vehicle-platform-api`.
 - Testes de integração com Testcontainers (PostgreSQL 17 real), incluindo teste
   de conexão com o banco.
+- Sincronização de veículos com o `vehicle-platform-api`
+  (`PUT /internal/vehicles/{id}`): cria o veículo (201) ou atualiza seus dados
+  (200) de forma idempotente, usando o mesmo `id` do serviço principal.
+  - Veículos são criados com status `AVAILABLE`; veículos `RESERVED` ou `SOLD`
+    não podem ser editados (409).
+  - Validação de entrada com Bean Validation (400 com a lista de campos
+    inválidos) e regras de domínio (422), como ano entre 1900 e o ano seguinte
+    ao atual e preço maior que zero.
+- Migração `V1__create_vehicles_table`: tabela `vehicles` com controle de
+  concorrência otimista (`version`) e índice `(status, price)` para as listagens.
+- Arquitetura em camadas: domínio (`domain`), casos de uso e portas
+  (`application`) e adaptadores web/JPA (`infrastructure`). Os casos de uso não
+  dependem do Spring e são registrados em `UseCaseConfig`.
+- Respostas de erro padronizadas no formato Problem Details (RFC 9457).
+- Mensagens de validação sempre em português (`spring.web.locale: pt_BR`).

@@ -63,6 +63,43 @@ O workflow [`ci.yml`](.github/workflows/ci.yml) roda em todo Pull Request para
   O ruleset bloqueia push direto, force push e exclusão das branches e exige PR
   com o check *Build, testes e cobertura (mínimo 80%)* verde.
 
+## Arquitetura
+
+O código segue uma arquitetura em camadas, com as dependências apontando para o
+domínio:
+
+```
+domain/          Regras de negócio (Vehicle, VehicleStatus, exceções)
+application/     Casos de uso e portas (interfaces), sem dependência do Spring
+infrastructure/  Adaptadores: web (controllers), persistência (JPA) e configuração
+```
+
+## API
+
+### Endpoints internos (chamados pelo `vehicle-platform-api`)
+
+| Método | Rota | Descrição |
+|---|---|---|
+| `PUT` | `/internal/vehicles/{id}` | Cria ou atualiza um veículo (sincronização do cadastro) |
+
+Exemplo:
+
+```bash
+curl -X PUT http://localhost:8081/internal/vehicles/3f1c2a4e-8b7d-4c1a-9e2f-1a2b3c4d5e6f \
+  -H 'Content-Type: application/json' \
+  -d '{"brand":"Toyota","model":"Corolla","year":2022,"color":"Prata","price":85000.00}'
+```
+
+| Status | Quando |
+|---|---|
+| `201 Created` | Veículo criado |
+| `200 OK` | Veículo existente atualizado |
+| `400 Bad Request` | Campos inválidos (a resposta lista os campos em `errors`) |
+| `409 Conflict` | Veículo reservado ou vendido não pode ser alterado |
+| `422 Unprocessable Content` | Regra de negócio violada (ex.: ano fora do intervalo permitido) |
+
+Os erros seguem o formato [Problem Details (RFC 9457)](https://www.rfc-editor.org/rfc/rfc9457).
+
 ## Como executar localmente
 
 Pré-requisitos: JDK 25 e Docker. Não é preciso instalar o Maven: o projeto usa o
