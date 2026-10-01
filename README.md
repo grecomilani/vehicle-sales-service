@@ -34,8 +34,25 @@ Toda alteração deve ser registrada no [CHANGELOG.md](CHANGELOG.md).
 
 ## Como executar localmente
 
-> Em construção. Será documentado conforme as features forem implementadas.
+Pré-requisito: JDK 25. Não é preciso instalar o Maven: o projeto usa o Maven Wrapper.
+
+```bash
+./mvnw spring-boot:run
+```
+
+A aplicação sobe na porta `8081` (altere com a variável `SERVER_PORT`).
+Para verificar se ela está no ar:
+
+```bash
+curl http://localhost:8081/actuator/health
+```
 
 ## Como testar
 
-> Em construção. Será documentado conforme as features forem implementadas.
+```bash
+./mvnw verify
+```
+
+O comando executa os testes e gera o relatório de cobertura do JaCoCo em
+`target/site/jacoco/index.html`. O build **falha** se a cobertura de linhas
+ficar abaixo de **80%**.
