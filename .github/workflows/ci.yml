@@ -1,0 +1,116 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main, 'feature/**']
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build, testes e cobertura (mínimo 80%)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Configurar JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Build, testes e verificação de cobertura
+        run: ./mvnw -B verify
+
+      - name: Resumo da cobertura
+        if: always()
+        run: |
+          CSV=target/site/jacoco/jacoco.csv
+          if [ ! -f "$CSV" ]; then
+            echo "Relatório de cobertura não encontrado." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          awk -F, 'NR > 1 { lm += $8; lc += $9; bm += $6; bc += $7 }
+            END {
+              lt = lm + lc; bt = bm + bc
+              printf "## Cobertura de testes (JaCoCo)\n\n"
+              printf "| Métrica | Cobertos | Total | %% |\n|---|---|---|---|\n"
+              printf "| Linhas | %d | %d | %.2f%% |\n", lc, lt, (lt ? lc * 100 / lt : 100)
+              printf "| Branches | %d | %d | %.2f%% |\n", bc, bt, (bt ? bc * 100 / bt : 100)
+              printf "\nMínimo exigido: **80%%** de linhas.\n"
+            }' "$CSV" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publicar relatório de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
+          if-no-files-found: ignore
+
+  # Git Flow: com o build verde, abre automaticamente o Pull Request
+  #   feature/*  -> develop
+  #   develop    -> main (release)
+  # Se já existir um PR aberto para o mesmo par de branches, nada é feito.
+  auto-pull-request:
+    name: Abrir Pull Request automático
+    needs: build-and-test
+    if: >-
+      github.event_name == 'push' &&
+      (startsWith(github.ref_name, 'feature/') || github.ref_name == 'develop')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      # PR_AUTOMATION_TOKEN (opcional): PAT com permissão de Pull requests.
+      # Com ele, o PR é aberto em nome do dono do token e dispara os workflows
+      # de pull_request. Sem ele, usa o GITHUB_TOKEN do Actions.
+      GH_TOKEN: ${{ secrets.PR_AUTOMATION_TOKEN || github.token }}
+      GH_REPO: ${{ github.repository }}
+      HEAD_BRANCH: ${{ github.ref_name }}
+
+    steps:
+      - name: Criar Pull Request
+        run: |
+          if [ "$HEAD_BRANCH" = "develop" ]; then
+            BASE_BRANCH=main
+            TITLE="Release: develop -> main"
+          else
+            BASE_BRANCH=develop
+            TITLE="${HEAD_BRANCH}"
+          fi
+
+          OPEN_PRS=$(gh pr list --head "$HEAD_BRANCH" --base "$BASE_BRANCH" --state open --json number --jq 'length')
+          if [ "$OPEN_PRS" != "0" ]; then
+            echo "Já existe um PR aberto de $HEAD_BRANCH para $BASE_BRANCH. Nada a fazer."
+            exit 0
+          fi
+
+          AHEAD_BY=$(gh api "repos/$GH_REPO/compare/$BASE_BRANCH...$HEAD_BRANCH" --jq '.ahead_by')
+          if [ "$AHEAD_BY" = "0" ]; then
+            echo "$HEAD_BRANCH não tem commits novos em relação a $BASE_BRANCH. Nada a fazer."
+            exit 0
+          fi
+
+          COMMITS=$(gh api "repos/$GH_REPO/compare/$BASE_BRANCH...$HEAD_BRANCH" \
+            --jq '.commits[] | "- " + (.commit.message | split("\n")[0])')
+
+          BODY=$(printf 'PR aberto automaticamente pelo pipeline de CI (Git Flow).\n\n**%s** -> **%s**\n\n### Commits\n%s\n\n### Checklist\n- [ ] CHANGELOG.md atualizado\n- [ ] Build, testes e cobertura (mínimo 80%%) verdes\n' \
+            "$HEAD_BRANCH" "$BASE_BRANCH" "$COMMITS")
+
+          if ! gh pr create --base "$BASE_BRANCH" --head "$HEAD_BRANCH" --title "$TITLE" --body "$BODY"; then
+            echo "::error::Não foi possível criar o PR. Habilite em Settings > Actions > General > Workflow permissions a opção 'Allow GitHub Actions to create and approve pull requests', ou configure o secret PR_AUTOMATION_TOKEN."
+            exit 1
+          fi

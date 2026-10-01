@@ -14,3 +14,32 @@ seção `[Unreleased]` é convertida na nova versão.
 ### Added
 - Estrutura inicial do repositório: `README.md`, `.gitignore`, `.editorconfig`
   e `CHANGELOG.md`.
+- Projeto Spring Boot 4.1.1 com Java 25 (LTS) e Maven Wrapper (Maven 3.9.11).
+- Dependências base: Spring Web MVC, Validation e Actuator (endpoints `health` e
+  `info`, com probes de liveness/readiness habilitadas).
+- Aplicação configurada na porta `8081` (sobrescrevível via `SERVER_PORT`).
+- JaCoCo 0.8.15 com gate de cobertura mínima de 80% de linhas na fase `verify`;
+  o build falha se a cobertura ficar abaixo do mínimo.
+- Testes iniciais: carregamento do contexto e endpoint `/actuator/health`.
+- `.gitattributes` para padronizar finais de linha (LF, e CRLF para scripts `.cmd`).
+- Pipeline de CI no GitHub Actions (`.github/workflows/ci.yml`): executa build,
+  testes e verificação de cobertura mínima de 80% em todo Pull Request e push
+  para `develop` e `main`. Publica o resumo de cobertura no job e o relatório
+  do JaCoCo como artefato (`jacoco-report`).
+- CI também executa em push para branches `feature/**`.
+- Job `auto-pull-request` no pipeline: com o build verde, abre automaticamente o
+  PR `feature/* -> develop` e, a cada push em `develop`, o PR de release
+  `develop -> main` (sem duplicar PRs já abertos). Aceita o secret opcional
+  `PR_AUTOMATION_TOKEN`.
+- Ruleset `protect-main-develop` (`.github/rulesets/`) para importação no GitHub:
+  bloqueia push direto, force push e exclusão de `main`/`develop` e exige PR com
+  o check de build/testes/cobertura verde.
+- Banco de dados PostgreSQL exclusivo do serviço de vendas: Spring Data JPA,
+  driver PostgreSQL e Flyway (migrações em `src/main/resources/db/migration`).
+  Conexão configurável pelas variáveis `DB_HOST`, `DB_PORT`, `DB_NAME`,
+  `DB_USERNAME` e `DB_PASSWORD`. O Hibernate apenas valida o schema
+  (`ddl-auto: validate`); o schema é gerido pelo Flyway.
+- `compose.yaml` com PostgreSQL 17 para desenvolvimento local, exposto na porta
+  `5433` para não conflitar com o banco do `vehicle-platform-api`.
+- Testes de integração com Testcontainers (PostgreSQL 17 real), incluindo teste
+  de conexão com o banco.
