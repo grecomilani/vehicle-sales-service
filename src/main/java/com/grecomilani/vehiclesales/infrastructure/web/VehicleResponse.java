@@ -1,4 +1,4 @@
-package com.grecomilani.vehiclesales.infrastructure.web.internal;
+package com.grecomilani.vehiclesales.infrastructure.web;
 
 import com.grecomilani.vehiclesales.domain.vehicle.Vehicle;
 import com.grecomilani.vehiclesales.domain.vehicle.VehicleStatus;
@@ -15,7 +15,7 @@ public record VehicleResponse(
         BigDecimal price,
         VehicleStatus status) {
 
-    static VehicleResponse from(Vehicle vehicle) {
+    public static VehicleResponse from(Vehicle vehicle) {
         return new VehicleResponse(vehicle.getId(), vehicle.getBrand(), vehicle.getModel(),
                 vehicle.getYear(), vehicle.getColor(), vehicle.getPrice(), vehicle.getStatus());
     }
