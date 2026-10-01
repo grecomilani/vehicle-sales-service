@@ -104,6 +104,14 @@ seção `[Unreleased]` é convertida na nova versão.
   JRE 25, em camadas do Spring Boot, executando como usuário não-root e com a
   memória da JVM limitada à do container (`MaxRAMPercentage=75`). Aceita o
   build-arg opcional `MAVEN_MIRROR_URL`.
+- Manifests Kubernetes em `k8s/` (Kustomize), no namespace `revenda-veiculos`:
+  - `database.yaml`: PostgreSQL exclusivo do serviço (Secret, Service e
+    StatefulSet com volume persistente).
+  - `configmap.yaml`, `deployment.yaml` (2 réplicas, rolling update sem
+    indisponibilidade, probes de startup/liveness/readiness, limites de recursos
+    e execução não-root) e `service.yaml`.
+  - `hpa.yaml`: HorizontalPodAutoscaler de 2 a 6 réplicas por uso de CPU, para
+    suportar picos de acesso nas listagens e compras.
 
 ### Changed
 - Pipeline: o job `auto-pull-request` passa a habilitar o merge automático dos
@@ -113,6 +121,9 @@ seção `[Unreleased]` é convertida na nova versão.
   *Allow auto-merge* do repositório.
 - Pipeline: novo job `docker-image` valida o build da imagem Docker em todo push
   e PR; o merge automático passa a depender dele.
+- Pipeline: novo job `k8s-manifests` renderiza os manifests com Kustomize e os
+  valida contra os schemas do Kubernetes (kubeconform); o merge automático passa
+  a depender dele.
 
 ### Fixed
 - Pipeline: o merge automático falhava quando o check do próprio PR ainda

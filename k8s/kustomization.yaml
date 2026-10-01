@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: revenda-veiculos
+
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: revenda-veiculos
+    includeSelectors: false
+
+resources:
+  - namespace.yaml
+  - database.yaml
+  - configmap.yaml
+  - deployment.yaml
+  - service.yaml
+  - hpa.yaml
+
+# A pipeline de CD substitui a tag pela versão (SHA do commit) publicada.
+images:
+  - name: ghcr.io/grecomilani/vehicle-sales-service
+    newTag: latest

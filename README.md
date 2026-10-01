@@ -23,6 +23,7 @@ listagem e compra, e usa um banco de dados segregado.
 - Java 25 (LTS)
 - Spring Boot
 - springdoc-openapi (Swagger UI)
+- Docker e Kubernetes (Kustomize)
 - Maven
 - PostgreSQL 17 (banco exclusivo deste serviço) + Flyway
 - JUnit 5 + Testcontainers + JaCoCo (cobertura mínima de 80%)
@@ -235,6 +236,31 @@ docker run --rm -p 8081:8081 --network host -e DB_HOST=localhost -e DB_PORT=5433
 Para subir **a solução completa** (os dois serviços e os dois bancos), use o
 `compose.solution.yaml` do repositório
 [`vehicle-platform-api`](https://github.com/grecomilani/vehicle-platform-api).
+
+## Kubernetes
+
+Os manifests ficam em [`k8s/`](k8s) e são aplicados com Kustomize
+(`kubectl apply -k k8s/`):
+
+| Arquivo | Conteúdo |
+|---|---|
+| `namespace.yaml` | Namespace `revenda-veiculos`, compartilhado pelos dois serviços |
+| `database.yaml` | PostgreSQL exclusivo do serviço: Secret, Service e StatefulSet com volume persistente |
+| `configmap.yaml` | Configuração da aplicação (host do banco, porta, fuso) |
+| `deployment.yaml` | Deployment da aplicação: 2 réplicas, probes de startup/liveness/readiness e limites de recursos |
+| `service.yaml` | Service `vehicle-sales-service` (ClusterIP, porta 8081) |
+| `hpa.yaml` | HorizontalPodAutoscaler: de 2 a 6 réplicas conforme o uso de CPU, para os picos de acesso |
+
+Exemplo de implantação em um cluster local com [kind](https://kind.sigs.k8s.io/):
+
+```bash
+kind create cluster --name revenda
+docker build -t ghcr.io/grecomilani/vehicle-sales-service:latest .
+kind load docker-image ghcr.io/grecomilani/vehicle-sales-service:latest --name revenda
+kubectl apply -k k8s/
+kubectl -n revenda-veiculos rollout status deployment/vehicle-sales-service
+kubectl -n revenda-veiculos port-forward service/vehicle-sales-service 8081:8081
+```
 
 ## Como testar
 
