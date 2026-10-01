@@ -24,10 +24,11 @@ spec:
         runAsGroup: 10001
       initContainers:
         # Aguarda o banco aceitar conexões antes de iniciar a aplicação
-        # (evita reinícios por falha do Flyway na inicialização)
+        # (evita reinícios por falha do Flyway na inicialização). O -U é necessário
+        # porque o container roda com um UID sem usuário correspondente na imagem.
         - name: wait-for-database
           image: postgres:17-alpine
-          command: ["sh", "-c", "until pg_isready -h \"$DB_HOST\" -p \"$DB_PORT\"; do echo 'aguardando o banco...'; sleep 2; done"]
+          command: ["sh", "-c", "until pg_isready -h \"$DB_HOST\" -p \"$DB_PORT\" -U healthcheck; do echo 'aguardando o banco...'; sleep 2; done"]
           envFrom:
             - configMapRef:
                 name: vehicle-sales-service-config
