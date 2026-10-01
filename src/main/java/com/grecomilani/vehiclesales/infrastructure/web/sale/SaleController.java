@@ -1,6 +1,7 @@
 package com.grecomilani.vehiclesales.infrastructure.web.sale;
 
 import com.grecomilani.vehiclesales.application.usecase.PurchaseVehicleUseCase;
+import com.grecomilani.vehiclesales.infrastructure.web.SaleResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;

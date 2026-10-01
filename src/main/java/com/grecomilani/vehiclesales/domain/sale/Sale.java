@@ -1,5 +1,6 @@
 package com.grecomilani.vehiclesales.domain.sale;
 
+import com.grecomilani.vehiclesales.domain.exception.ConflictException;
 import com.grecomilani.vehiclesales.domain.exception.DomainException;
 import com.grecomilani.vehiclesales.domain.vehicle.Vehicle;
 
@@ -20,7 +21,7 @@ public class Sale {
     private final LocalDate saleDate;
     private final BigDecimal price;
     private final String paymentCode;
-    private final PaymentStatus paymentStatus;
+    private PaymentStatus paymentStatus;
     private final Long version;
 
     public Sale(UUID id, UUID vehicleId, Cpf buyerCpf, LocalDate saleDate, BigDecimal price,
@@ -48,6 +49,30 @@ public class Sale {
         }
         return new Sale(UUID.randomUUID(), vehicle.getId(), buyerCpf, saleDate, vehicle.getPrice(),
                 UUID.randomUUID().toString(), PaymentStatus.PENDING, null);
+    }
+
+    /**
+     * Registra o resultado do pagamento informado pela entidade processadora.
+     * <p>
+     * Idempotente: receber de novo o resultado já registrado não altera nada.
+     * Uma vez pago ou cancelado, o pagamento não pode mudar para o outro resultado.
+     *
+     * @param result {@link PaymentStatus#PAID} ou {@link PaymentStatus#CANCELED}
+     * @return {@code true} se o status mudou; {@code false} se o resultado já estava registrado
+     */
+    public boolean registerPaymentResult(PaymentStatus result) {
+        if (result == null || result == PaymentStatus.PENDING) {
+            throw new DomainException("O resultado do pagamento deve ser PAID ou CANCELED.");
+        }
+        if (paymentStatus == result) {
+            return false;
+        }
+        if (paymentStatus != PaymentStatus.PENDING) {
+            throw new ConflictException("O pagamento da venda %s já foi finalizado como %s."
+                    .formatted(id, paymentStatus));
+        }
+        this.paymentStatus = result;
+        return true;
     }
 
     public UUID getId() {

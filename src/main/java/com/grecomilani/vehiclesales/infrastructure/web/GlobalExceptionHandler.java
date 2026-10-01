@@ -1,5 +1,6 @@
 package com.grecomilani.vehiclesales.infrastructure.web;
 
+import com.grecomilani.vehiclesales.domain.exception.ConflictException;
 import com.grecomilani.vehiclesales.domain.exception.DomainException;
 import com.grecomilani.vehiclesales.domain.exception.NotFoundException;
 import com.grecomilani.vehiclesales.domain.vehicle.VehicleNotAvailableException;
@@ -49,6 +50,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     ProblemDetail handleDataIntegrityViolation(DataIntegrityViolationException ex) {
         return problem(HttpStatus.CONFLICT, "Conflito de dados",
                 "A operação conflita com o estado atual dos dados.");
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    ProblemDetail handleConflict(ConflictException ex) {
+        return problem(HttpStatus.CONFLICT, "Conflito", ex.getMessage());
     }
 
     @ExceptionHandler(NotFoundException.class)
