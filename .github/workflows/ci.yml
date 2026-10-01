@@ -113,7 +113,11 @@ jobs:
               "$HEAD_BRANCH" "$BASE_BRANCH" "$COMMITS")
 
             if ! PR_URL=$(gh pr create --base "$BASE_BRANCH" --head "$HEAD_BRANCH" --title "$TITLE" --body "$BODY"); then
-              echo "::error::Não foi possível criar o PR. Habilite em Settings > Actions > General > Workflow permissions a opção 'Allow GitHub Actions to create and approve pull requests', ou configure o secret PR_AUTOMATION_TOKEN."
+              if [ "$HAS_PAT" = "true" ]; then
+                echo "::error::Não foi possível criar o PR com o PR_AUTOMATION_TOKEN. Verifique se o token tem acesso a este repositório e as permissões Contents, Pull requests e Workflows (Read and write), e se não expirou."
+              else
+                echo "::error::Não foi possível criar o PR com o GITHUB_TOKEN. Habilite em Settings > Actions > General > Workflow permissions a opção 'Allow GitHub Actions to create and approve pull requests', ou configure o secret PR_AUTOMATION_TOKEN."
+              fi
               exit 1
             fi
             PR_NUMBER="${PR_URL##*/}"
