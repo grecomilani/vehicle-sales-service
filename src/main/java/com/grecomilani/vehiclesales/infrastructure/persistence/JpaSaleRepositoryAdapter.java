@@ -5,6 +5,8 @@ import com.grecomilani.vehiclesales.domain.sale.Sale;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Component
 class JpaSaleRepositoryAdapter implements SaleRepository {
 
@@ -17,6 +19,12 @@ class JpaSaleRepositoryAdapter implements SaleRepository {
     @Override
     @Transactional
     public Sale save(Sale sale) {
-        return repository.save(SaleEntity.from(sale)).toDomain();
+        return repository.saveAndFlush(SaleEntity.from(sale)).toDomain();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Sale> findByPaymentCode(String paymentCode) {
+        return repository.findByPaymentCode(paymentCode).map(SaleEntity::toDomain);
     }
 }

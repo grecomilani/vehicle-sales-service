@@ -1,8 +1,12 @@
 package com.grecomilani.vehiclesales.domain.sale;
 
+import com.grecomilani.vehiclesales.domain.exception.ConflictException;
 import com.grecomilani.vehiclesales.domain.exception.DomainException;
 import com.grecomilani.vehiclesales.domain.vehicle.Vehicle;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.NullSource;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -59,6 +63,55 @@ class SaleTest {
     void startShouldRequireSaleDate() {
         assertThatThrownBy(() -> Sale.start(vehicle, CPF, null, TODAY))
                 .isInstanceOf(NullPointerException.class);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = PaymentStatus.class, names = {"PAID", "CANCELED"})
+    void registerPaymentResultShouldFinalizePendingPayment(PaymentStatus result) {
+        Sale sale = Sale.start(vehicle, CPF, TODAY, TODAY);
+
+        assertThat(sale.registerPaymentResult(result)).isTrue();
+        assertThat(sale.getPaymentStatus()).isEqualTo(result);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = PaymentStatus.class, names = {"PAID", "CANCELED"})
+    void registerPaymentResultShouldBeIdempotent(PaymentStatus result) {
+        Sale sale = saleWithStatus(result);
+
+        assertThat(sale.registerPaymentResult(result)).isFalse();
+        assertThat(sale.getPaymentStatus()).isEqualTo(result);
+    }
+
+    @Test
+    void finalizedPaymentShouldNotChangeToAnotherResult() {
+        Sale paid = saleWithStatus(PaymentStatus.PAID);
+        Sale canceled = saleWithStatus(PaymentStatus.CANCELED);
+
+        assertThatThrownBy(() -> paid.registerPaymentResult(PaymentStatus.CANCELED))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("PAID");
+        assertThatThrownBy(() -> canceled.registerPaymentResult(PaymentStatus.PAID))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("CANCELED");
+        assertThat(paid.getPaymentStatus()).isEqualTo(PaymentStatus.PAID);
+        assertThat(canceled.getPaymentStatus()).isEqualTo(PaymentStatus.CANCELED);
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @EnumSource(value = PaymentStatus.class, names = "PENDING")
+    void registerPaymentResultShouldRejectNonFinalResult(PaymentStatus result) {
+        Sale sale = Sale.start(vehicle, CPF, TODAY, TODAY);
+
+        assertThatThrownBy(() -> sale.registerPaymentResult(result))
+                .isInstanceOf(DomainException.class)
+                .hasMessageContaining("PAID ou CANCELED");
+        assertThat(sale.getPaymentStatus()).isEqualTo(PaymentStatus.PENDING);
+    }
+
+    private Sale saleWithStatus(PaymentStatus status) {
+        return new Sale(UUID.randomUUID(), vehicle.getId(), CPF, TODAY, BigDecimal.TEN, "code", status, 1L);
     }
 
     @Test

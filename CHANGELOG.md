@@ -83,3 +83,14 @@ seção `[Unreleased]` é convertida na nova versão.
 - Migração `V2__create_sales_table`: tabela `sales`.
 - Porta `TransactionRunner`, para executar casos de uso em transação sem
   acoplar a camada de aplicação ao Spring.
+- Atualização do status de pagamento
+  (`PATCH /internal/sales/{paymentCode}/payment`), chamada pelo
+  `vehicle-platform-api` quando o webhook de pagamento é recebido:
+  - `PAID`: a venda fica paga e o veículo passa a `SOLD`.
+  - `CANCELED`: a venda é cancelada e o veículo volta a `AVAILABLE`, podendo
+    ser comprado novamente.
+  - Idempotente: reenviar o mesmo resultado retorna 200 sem alterar nada.
+  - Um pagamento já finalizado não muda para o outro resultado (409); código
+    de pagamento inexistente retorna 404; status diferente de `PAID`/`CANCELED`
+    retorna 400.
+- `ConflictException` no domínio, mapeada para 409 no Problem Details.

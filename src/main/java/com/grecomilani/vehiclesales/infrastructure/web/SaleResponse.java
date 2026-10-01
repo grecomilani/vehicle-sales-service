@@ -1,4 +1,4 @@
-package com.grecomilani.vehiclesales.infrastructure.web.sale;
+package com.grecomilani.vehiclesales.infrastructure.web;
 
 import com.grecomilani.vehiclesales.domain.sale.PaymentStatus;
 import com.grecomilani.vehiclesales.domain.sale.Sale;
@@ -16,7 +16,7 @@ public record SaleResponse(
         String paymentCode,
         PaymentStatus paymentStatus) {
 
-    static SaleResponse from(Sale sale) {
+    public static SaleResponse from(Sale sale) {
         return new SaleResponse(sale.getId(), sale.getVehicleId(), sale.getBuyerCpf().value(),
                 sale.getSaleDate(), sale.getPrice(), sale.getPaymentCode(), sale.getPaymentStatus());
     }
