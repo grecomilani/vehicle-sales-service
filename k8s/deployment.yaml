@@ -22,6 +22,25 @@ spec:
         runAsNonRoot: true
         runAsUser: 10001
         runAsGroup: 10001
+      initContainers:
+        # Aguarda o banco aceitar conexões antes de iniciar a aplicação
+        # (evita reinícios por falha do Flyway na inicialização)
+        - name: wait-for-database
+          image: postgres:17-alpine
+          command: ["sh", "-c", "until pg_isready -h \"$DB_HOST\" -p \"$DB_PORT\"; do echo 'aguardando o banco...'; sleep 2; done"]
+          envFrom:
+            - configMapRef:
+                name: vehicle-sales-service-config
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
       containers:
         - name: vehicle-sales-service
           image: ghcr.io/grecomilani/vehicle-sales-service
@@ -70,7 +89,7 @@ spec:
             periodSeconds: 5
           resources:
             requests:
-              cpu: 250m
+              cpu: 100m
               memory: 512Mi
             limits:
               memory: 768Mi
