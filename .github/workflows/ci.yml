@@ -133,13 +133,25 @@ jobs:
             echo "::warning::Secret PR_AUTOMATION_TOKEN não configurado: o merge será feito com o GITHUB_TOKEN e não disparará o pipeline da branch de destino."
           fi
 
-          # Com checks pendentes, o GitHub agenda o merge (auto-merge). Se o PR já
-          # estiver pronto para merge, o auto-merge é recusado e o merge é feito na hora.
-          if gh pr merge "$PR_NUMBER" --auto --merge; then
-            echo "Merge automático habilitado no PR #$PR_NUMBER."
-          elif gh pr merge "$PR_NUMBER" --merge; then
-            echo "PR #$PR_NUMBER mergeado."
-          else
-            echo "::error::Não foi possível fazer o merge do PR #$PR_NUMBER. Verifique se 'Allow auto-merge' está habilitado em Settings > General e se os checks obrigatórios passaram."
-            exit 1
-          fi
+          # Com checks pendentes, o GitHub agenda o merge (auto-merge); se o PR já
+          # estiver pronto, o merge é feito na hora. Logo após a criação do PR, o
+          # check do próprio PR ainda pode estar sendo registrado e o GitHub recusa
+          # a operação: por isso há novas tentativas.
+          for attempt in $(seq 1 30); do
+            STATE=$(gh pr view "$PR_NUMBER" --json state,autoMergeRequest \
+              --jq '.state + (if .autoMergeRequest then "+auto" else "" end)')
+            case "$STATE" in
+              MERGED*) echo "PR #$PR_NUMBER mergeado."; exit 0 ;;
+              CLOSED*) echo "PR #$PR_NUMBER foi fechado sem merge. Nada a fazer."; exit 0 ;;
+              *+auto) echo "Merge automático habilitado no PR #$PR_NUMBER."; exit 0 ;;
+            esac
+
+            if gh pr merge "$PR_NUMBER" --auto --merge; then
+              continue
+            fi
+            echo "Tentativa $attempt de 30 não concluída; nova tentativa em 20s."
+            sleep 20
+          done
+
+          echo "::error::Não foi possível fazer o merge do PR #$PR_NUMBER. Verifique se 'Allow auto-merge' está habilitado em Settings > General e se os checks obrigatórios passaram."
+          exit 1
