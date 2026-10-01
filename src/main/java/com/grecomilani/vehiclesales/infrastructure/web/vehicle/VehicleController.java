@@ -1,6 +1,7 @@
 package com.grecomilani.vehiclesales.infrastructure.web.vehicle;
 
 import com.grecomilani.vehiclesales.application.usecase.ListAvailableVehiclesUseCase;
+import com.grecomilani.vehiclesales.application.usecase.ListSoldVehiclesUseCase;
 import com.grecomilani.vehiclesales.infrastructure.web.PageResponse;
 import com.grecomilani.vehiclesales.infrastructure.web.VehicleResponse;
 import jakarta.validation.constraints.Max;
@@ -20,9 +21,12 @@ public class VehicleController {
     static final int MAX_PAGE_SIZE = 100;
 
     private final ListAvailableVehiclesUseCase listAvailableVehiclesUseCase;
+    private final ListSoldVehiclesUseCase listSoldVehiclesUseCase;
 
-    public VehicleController(ListAvailableVehiclesUseCase listAvailableVehiclesUseCase) {
+    public VehicleController(ListAvailableVehiclesUseCase listAvailableVehiclesUseCase,
+                             ListSoldVehiclesUseCase listSoldVehiclesUseCase) {
         this.listAvailableVehiclesUseCase = listAvailableVehiclesUseCase;
+        this.listSoldVehiclesUseCase = listSoldVehiclesUseCase;
     }
 
     /**
@@ -33,5 +37,16 @@ public class VehicleController {
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(MAX_PAGE_SIZE) int size) {
         return PageResponse.from(listAvailableVehiclesUseCase.execute(page, size), VehicleResponse::from);
+    }
+
+    /**
+     * Veículos vendidos (pagamento confirmado), ordenados por preço do mais
+     * barato para o mais caro.
+     */
+    @GetMapping("/sold")
+    public PageResponse<VehicleResponse> listSold(
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(MAX_PAGE_SIZE) int size) {
+        return PageResponse.from(listSoldVehiclesUseCase.execute(page, size), VehicleResponse::from);
     }
 }

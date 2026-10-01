@@ -2,7 +2,9 @@ package com.grecomilani.vehiclesales.infrastructure.web.vehicle;
 
 import com.grecomilani.vehiclesales.application.port.PageResult;
 import com.grecomilani.vehiclesales.application.usecase.ListAvailableVehiclesUseCase;
+import com.grecomilani.vehiclesales.application.usecase.ListSoldVehiclesUseCase;
 import com.grecomilani.vehiclesales.domain.vehicle.Vehicle;
+import com.grecomilani.vehiclesales.domain.vehicle.VehicleStatus;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -29,6 +31,9 @@ class VehicleControllerTest {
 
     @MockitoBean
     private ListAvailableVehiclesUseCase listAvailableVehiclesUseCase;
+
+    @MockitoBean
+    private ListSoldVehiclesUseCase listSoldVehiclesUseCase;
 
     @Test
     void shouldListAvailableVehiclesWithDefaultPagination() throws Exception {
@@ -73,5 +78,30 @@ class VehicleControllerTest {
                 .andExpect(jsonPath("$.errors.size").exists());
 
         verify(listAvailableVehiclesUseCase, never()).execute(anyInt(), anyInt());
+    }
+
+    @Test
+    void shouldListSoldVehicles() throws Exception {
+        UUID id = UUID.randomUUID();
+        Vehicle sold = new Vehicle(id, "Fiat", "Uno", 2015, "Branco", new BigDecimal("30000.00"),
+                VehicleStatus.SOLD, 2L);
+        when(listSoldVehiclesUseCase.execute(1, 10)).thenReturn(new PageResult<>(List.of(sold), 1, 10, 11));
+
+        mockMvc.perform(get("/vehicles/sold").param("page", "1").param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].id").value(id.toString()))
+                .andExpect(jsonPath("$.content[0].status").value("SOLD"))
+                .andExpect(jsonPath("$.page").value(1))
+                .andExpect(jsonPath("$.totalElements").value(11))
+                .andExpect(jsonPath("$.totalPages").value(2));
+    }
+
+    @Test
+    void shouldRejectInvalidPaginationParametersOnSoldListing() throws Exception {
+        mockMvc.perform(get("/vehicles/sold").param("size", "0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.size").exists());
+
+        verify(listSoldVehiclesUseCase, never()).execute(anyInt(), anyInt());
     }
 }
