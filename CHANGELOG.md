@@ -100,6 +100,10 @@ seção `[Unreleased]` é convertida na nova versão.
 - Documentação da API com OpenAPI 3 (springdoc-openapi 3.1.1): Swagger UI em
   `/swagger-ui.html` e especificação em `/v3/api-docs`, com os endpoints
   agrupados por assunto e descritos.
+- `Dockerfile` multi-stage: build com o Maven Wrapper (JDK 25) e runtime com a
+  JRE 25, em camadas do Spring Boot, executando como usuário não-root e com a
+  memória da JVM limitada à do container (`MaxRAMPercentage=75`). Aceita o
+  build-arg opcional `MAVEN_MIRROR_URL`.
 
 ### Changed
 - Pipeline: o job `auto-pull-request` passa a habilitar o merge automático dos
@@ -107,6 +111,8 @@ seção `[Unreleased]` é convertida na nova versão.
   quando os checks obrigatórios ficam verdes, e o PR pode ser segurado com a
   label `hold`. O fluxo completo exige o secret `PR_AUTOMATION_TOKEN` e a opção
   *Allow auto-merge* do repositório.
+- Pipeline: novo job `docker-image` valida o build da imagem Docker em todo push
+  e PR; o merge automático passa a depender dele.
 
 ### Fixed
 - Pipeline: o merge automático falhava quando o check do próprio PR ainda

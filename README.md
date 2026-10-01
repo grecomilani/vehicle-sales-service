@@ -221,6 +221,21 @@ Para verificar se ela está no ar:
 curl http://localhost:8081/actuator/health
 ```
 
+## Executar com Docker
+
+A imagem é gerada por um Dockerfile multi-stage: compila com o Maven Wrapper e
+roda com a JRE 25, como usuário não-root.
+
+```bash
+docker build -t vehicle-sales-service .
+docker compose up -d   # banco de dados do serviço
+docker run --rm -p 8081:8081 --network host -e DB_HOST=localhost -e DB_PORT=5433 vehicle-sales-service
+```
+
+Para subir **a solução completa** (os dois serviços e os dois bancos), use o
+`compose.solution.yaml` do repositório
+[`vehicle-platform-api`](https://github.com/grecomilani/vehicle-platform-api).
+
 ## Como testar
 
 ```bash
