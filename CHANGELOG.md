@@ -104,3 +104,9 @@ seção `[Unreleased]` é convertida na nova versão.
   quando os checks obrigatórios ficam verdes, e o PR pode ser segurado com a
   label `hold`. O fluxo completo exige o secret `PR_AUTOMATION_TOKEN` e a opção
   *Allow auto-merge* do repositório.
+
+### Fixed
+- Pipeline: o merge automático falhava quando o check do próprio PR ainda
+  estava sendo registrado logo após a criação do PR (o GitHub recusava o merge
+  com o check `queued`). O job agora tenta novamente a cada 20s, por até 10
+  minutos, até agendar o auto-merge ou concluir o merge.
