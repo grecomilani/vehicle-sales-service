@@ -24,7 +24,8 @@ RUN ./mvnw -B -q package -DskipTests && \
 FROM eclipse-temurin:25-jre
 WORKDIR /app
 
-RUN groupadd --system app && useradd --system --gid app --no-create-home app
+# UID/GID numéricos: permitem ao Kubernetes verificar que o container não roda como root
+RUN groupadd --system --gid 10001 app && useradd --system --uid 10001 --gid app --no-create-home app
 
 # Camadas da aplicação, da que menos muda para a que mais muda
 COPY --from=build /workspace/extracted/dependencies/ ./
@@ -32,7 +33,7 @@ COPY --from=build /workspace/extracted/spring-boot-loader/ ./
 COPY --from=build /workspace/extracted/snapshot-dependencies/ ./
 COPY --from=build /workspace/extracted/application/ ./
 
-USER app
+USER 10001:10001
 EXPOSE 8081
 
 # Usa a memória disponível no container em vez da memória do host
