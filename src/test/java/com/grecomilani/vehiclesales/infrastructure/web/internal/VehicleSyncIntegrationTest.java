@@ -36,6 +36,7 @@ class VehicleSyncIntegrationTest {
 
     @BeforeEach
     void cleanDatabase() {
+        jdbcTemplate.update("DELETE FROM sales");
         jdbcTemplate.update("DELETE FROM vehicles");
     }
 

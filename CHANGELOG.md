@@ -64,3 +64,22 @@ seção `[Unreleased]` é convertida na nova versão.
   - Paginação por `page` (padrão `0`) e `size` (padrão `20`, máximo `100`).
   - Resposta com `content`, `page`, `size`, `totalElements` e `totalPages`.
   - Parâmetros inválidos retornam 400 com os detalhes em `errors`.
+- Compra de veículo (`POST /sales`) com CPF do comprador e data da venda:
+  reserva o veículo (`RESERVED`) e cria a venda com pagamento `PENDING`, na
+  mesma transação. A resposta traz o `paymentCode`, usado pela entidade
+  processadora de pagamentos para informar o resultado.
+  - CPF validado (dígitos verificadores), aceito com ou sem máscara e
+    armazenado só com os dígitos.
+  - A data da venda não pode estar no futuro (fuso configurável por
+    `APP_TIME_ZONE`, padrão `America/Sao_Paulo`).
+  - O preço do veículo no momento da compra é registrado na venda.
+  - Respostas: 201 (venda criada), 400 (dados inválidos), 404 (veículo não
+    encontrado), 409 (veículo reservado/vendido ou compra simultânea),
+    422 (data no futuro).
+- Proteção contra compras simultâneas do mesmo veículo: controle de
+  concorrência otimista (`version`) no veículo e índice único parcial
+  `uq_sales_active_vehicle`, que permite no máximo uma venda ativa
+  (pendente ou paga) por veículo.
+- Migração `V2__create_sales_table`: tabela `sales`.
+- Porta `TransactionRunner`, para executar casos de uso em transação sem
+  acoplar a camada de aplicação ao Spring.

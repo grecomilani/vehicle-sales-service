@@ -35,7 +35,7 @@ class VehicleTest {
     void shouldRequireIdAndStatus() {
         assertThatThrownBy(() -> Vehicle.create(null, "Toyota", "Corolla", 2022, "Prata", PRICE))
                 .isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> new Vehicle(ID, "Toyota", "Corolla", 2022, "Prata", PRICE, null))
+        assertThatThrownBy(() -> new Vehicle(ID, "Toyota", "Corolla", 2022, "Prata", PRICE, null, null))
                 .isInstanceOf(NullPointerException.class);
     }
 
@@ -98,10 +98,35 @@ class VehicleTest {
         assertThat(vehicle.getStatus()).isEqualTo(VehicleStatus.AVAILABLE);
     }
 
+    @Test
+    void newVehicleShouldHaveNoVersionAndPersistedVehicleShouldKeepIt() {
+        assertThat(Vehicle.create(ID, "Toyota", "Corolla", 2022, "Prata", PRICE).getVersion()).isNull();
+        assertThat(new Vehicle(ID, "Toyota", "Corolla", 2022, "Prata", PRICE, VehicleStatus.AVAILABLE, 3L)
+                .getVersion()).isEqualTo(3L);
+    }
+
+    @Test
+    void reserveShouldMarkAvailableVehicleAsReserved() {
+        Vehicle vehicle = Vehicle.create(ID, "Toyota", "Corolla", 2022, "Prata", PRICE);
+
+        vehicle.reserve();
+
+        assertThat(vehicle.getStatus()).isEqualTo(VehicleStatus.RESERVED);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"RESERVED", "SOLD"})
+    void reserveShouldBeRejectedWhenVehicleIsNotAvailable(VehicleStatus status) {
+        Vehicle vehicle = new Vehicle(ID, "Toyota", "Corolla", 2022, "Prata", PRICE, status, 1L);
+
+        assertThatThrownBy(vehicle::reserve).isInstanceOf(VehicleNotAvailableException.class);
+        assertThat(vehicle.getStatus()).isEqualTo(status);
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"RESERVED", "SOLD"})
     void updateDetailsShouldBeRejectedWhenVehicleIsNotAvailable(VehicleStatus status) {
-        Vehicle vehicle = new Vehicle(ID, "Toyota", "Corolla", 2022, "Prata", PRICE, status);
+        Vehicle vehicle = new Vehicle(ID, "Toyota", "Corolla", 2022, "Prata", PRICE, status, 1L);
 
         assertThatThrownBy(() -> vehicle.updateDetails("Toyota", "Corolla", 2022, "Prata", BigDecimal.TEN))
                 .isInstanceOf(VehicleNotAvailableException.class)

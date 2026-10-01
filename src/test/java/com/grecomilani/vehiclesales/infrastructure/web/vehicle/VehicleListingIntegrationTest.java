@@ -35,6 +35,7 @@ class VehicleListingIntegrationTest {
 
     @BeforeEach
     void setUp() throws Exception {
+        jdbcTemplate.update("DELETE FROM sales");
         jdbcTemplate.update("DELETE FROM vehicles");
 
         createVehicle("Civic", "120000.00", "AVAILABLE");

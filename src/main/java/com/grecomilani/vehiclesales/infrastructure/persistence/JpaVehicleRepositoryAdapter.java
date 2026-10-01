@@ -33,14 +33,10 @@ class JpaVehicleRepositoryAdapter implements VehicleRepository {
     @Override
     @Transactional
     public Vehicle save(Vehicle vehicle) {
-        VehicleEntity entity = repository.findById(vehicle.getId())
-                .map(existing -> {
-                    existing.copyFrom(vehicle);
-                    return existing;
-                })
-                .orElseGet(() -> VehicleEntity.from(vehicle));
-
-        return repository.save(entity).toDomain();
+        // Sem versão: insert. Com versão: merge com verificação de concorrência otimista.
+        // O flush imediato faz um eventual conflito de versão ser detectado aqui,
+        // antes das demais operações da transação.
+        return repository.saveAndFlush(VehicleEntity.from(vehicle)).toDomain();
     }
 
     @Override
