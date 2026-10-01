@@ -112,6 +112,12 @@ seção `[Unreleased]` é convertida na nova versão.
     e execução não-root) e `service.yaml`.
   - `hpa.yaml`: HorizontalPodAutoscaler de 2 a 6 réplicas por uso de CPU, para
     suportar picos de acesso nas listagens e compras.
+- Pipeline de deploy contínuo (`.github/workflows/deploy.yml`), executado a
+  cada merge na `main`: publica a imagem no GitHub Container Registry, cria um
+  cluster Kubernetes com kind no runner (com metrics-server), implanta os
+  manifests com a imagem do commit, aguarda o rollout e executa um smoke test
+  ponta a ponta (`.github/scripts/smoke-test.sh`). Em caso de falha, imprime o
+  diagnóstico do cluster.
 
 ### Changed
 - Pipeline: o job `auto-pull-request` passa a habilitar o merge automático dos
@@ -124,6 +130,13 @@ seção `[Unreleased]` é convertida na nova versão.
 - Pipeline: novo job `k8s-manifests` renderiza os manifests com Kustomize e os
   valida contra os schemas do Kubernetes (kubeconform); o merge automático passa
   a depender dele.
+- Imagem Docker passa a usar UID/GID numéricos (`10001`), permitindo ao
+  Kubernetes verificar que o container não roda como root.
+- Deployment: `runAsUser`/`runAsGroup` explícitos, sem escalada de privilégio e
+  sem capabilities; request de CPU reduzido para `100m` (sem limite de CPU, a JVM
+  continua podendo usar mais no startup).
+- Deployment: `initContainer` aguarda o PostgreSQL aceitar conexões antes de
+  iniciar a aplicação, evitando reinícios por falha do Flyway na inicialização.
 
 ### Fixed
 - Pipeline: o merge automático falhava quando o check do próprio PR ainda

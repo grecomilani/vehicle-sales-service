@@ -58,6 +58,22 @@ O workflow [`ci.yml`](.github/workflows/ci.yml) roda em todo Pull Request para
    manual), adicione a label **`hold`**: o PR continua aberto e o merge fica
    manual.
 
+### Deploy contínuo (CD)
+
+O workflow [`deploy.yml`](.github/workflows/deploy.yml) roda a cada merge na
+`main` (release do Git Flow):
+
+1. Build da imagem e publicação no GitHub Container Registry
+   (`ghcr.io/grecomilani/vehicle-sales-service`, com a tag do commit e `latest`).
+2. Criação de um cluster Kubernetes com [kind](https://kind.sigs.k8s.io/) no
+   próprio runner, com o metrics-server (métricas de CPU para o HPA).
+3. Deploy dos manifests de [`k8s/`](k8s) com a imagem fixada na versão do commit.
+4. Espera do rollout do banco e da aplicação.
+5. **Smoke test** ([`smoke-test.sh`](.github/scripts/smoke-test.sh)) contra o
+   serviço implantado: sincronização de veículo, listagem à venda, compra,
+   confirmação de pagamento e listagem de vendidos.
+6. Em caso de falha, o job imprime o diagnóstico (pods, eventos e logs).
+
 ### Configuração necessária no GitHub
 
 1. **Token de automação** (`PR_AUTOMATION_TOKEN`): merges feitos com o token
