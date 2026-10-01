@@ -81,9 +81,10 @@ infrastructure/  Adaptadores: web (controllers), persistência (JPA) e configura
 | Método | Rota | Descrição |
 |---|---|---|
 | `GET` | `/vehicles/available?page=0&size=20` | Veículos à venda, do mais barato para o mais caro |
+| `GET` | `/vehicles/sold?page=0&size=20` | Veículos vendidos (pagamento confirmado), do mais barato para o mais caro |
 | `POST` | `/sales` | Efetua a compra de um veículo |
 
-A listagem é paginada: `page` começa em `0`, e `size` tem padrão `20` e máximo
+As listagens são paginadas: `page` começa em `0`, e `size` tem padrão `20` e máximo
 `100`. Exemplo de resposta:
 
 ```json

@@ -4,6 +4,7 @@ import com.grecomilani.vehiclesales.application.port.SaleRepository;
 import com.grecomilani.vehiclesales.application.port.TransactionRunner;
 import com.grecomilani.vehiclesales.application.port.VehicleRepository;
 import com.grecomilani.vehiclesales.application.usecase.ListAvailableVehiclesUseCase;
+import com.grecomilani.vehiclesales.application.usecase.ListSoldVehiclesUseCase;
 import com.grecomilani.vehiclesales.application.usecase.PurchaseVehicleUseCase;
 import com.grecomilani.vehiclesales.application.usecase.SyncVehicleUseCase;
 import com.grecomilani.vehiclesales.application.usecase.UpdatePaymentStatusUseCase;
@@ -29,6 +30,11 @@ public class UseCaseConfig {
     @Bean
     ListAvailableVehiclesUseCase listAvailableVehiclesUseCase(VehicleRepository vehicleRepository) {
         return new ListAvailableVehiclesUseCase(vehicleRepository);
+    }
+
+    @Bean
+    ListSoldVehiclesUseCase listSoldVehiclesUseCase(VehicleRepository vehicleRepository) {
+        return new ListSoldVehiclesUseCase(vehicleRepository);
     }
 
     @Bean

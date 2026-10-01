@@ -94,3 +94,6 @@ seção `[Unreleased]` é convertida na nova versão.
     de pagamento inexistente retorna 404; status diferente de `PAID`/`CANCELED`
     retorna 400.
 - `ConflictException` no domínio, mapeada para 409 no Problem Details.
+- Listagem de veículos vendidos (`GET /vehicles/sold`): retorna apenas os
+  veículos `SOLD` (pagamento confirmado), ordenados por preço do mais barato
+  para o mais caro, com a mesma paginação da listagem de veículos à venda.
