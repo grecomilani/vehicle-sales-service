@@ -11,6 +11,10 @@ spring:
       ddl-auto: validate
   flyway:
     locations: classpath:db/migration
+  web:
+    # Mensagens de validação sempre em português
+    locale: pt_BR
+    locale-resolver: fixed
 
 server:
   port: ${SERVER_PORT:8081}
