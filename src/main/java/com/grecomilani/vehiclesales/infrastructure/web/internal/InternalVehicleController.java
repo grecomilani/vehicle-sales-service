@@ -3,6 +3,8 @@ package com.grecomilani.vehiclesales.infrastructure.web.internal;
 import com.grecomilani.vehiclesales.application.usecase.SyncVehicleResult;
 import com.grecomilani.vehiclesales.application.usecase.SyncVehicleUseCase;
 import com.grecomilani.vehiclesales.infrastructure.web.VehicleResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +19,7 @@ import java.util.UUID;
 /**
  * Endpoints de uso interno, chamados apenas pelo {@code vehicle-platform-api}.
  */
+@Tag(name = "Interno", description = "Endpoints de uso exclusivo do vehicle-platform-api")
 @RestController
 @RequestMapping("/internal/vehicles")
 public class InternalVehicleController {
@@ -31,6 +34,7 @@ public class InternalVehicleController {
      * Cria ou atualiza o veículo. Responde 201 quando o veículo é criado e
      * 200 quando um veículo existente é atualizado.
      */
+    @Operation(summary = "Cria ou atualiza um veículo (sincronização do cadastro)")
     @PutMapping("/{id}")
     public ResponseEntity<VehicleResponse> sync(@PathVariable UUID id,
                                                 @Valid @RequestBody VehicleSyncRequest request) {

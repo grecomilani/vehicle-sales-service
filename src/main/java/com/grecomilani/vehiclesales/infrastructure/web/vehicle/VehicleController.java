@@ -4,6 +4,8 @@ import com.grecomilani.vehiclesales.application.usecase.ListAvailableVehiclesUse
 import com.grecomilani.vehiclesales.application.usecase.ListSoldVehiclesUseCase;
 import com.grecomilani.vehiclesales.infrastructure.web.PageResponse;
 import com.grecomilani.vehiclesales.infrastructure.web.VehicleResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Endpoints públicos de consulta de veículos, consumidos pelo frontend.
  */
+@Tag(name = "Veículos", description = "Consulta de veículos à venda e vendidos")
 @RestController
 @RequestMapping("/vehicles")
 public class VehicleController {
@@ -32,6 +35,7 @@ public class VehicleController {
     /**
      * Veículos à venda, ordenados por preço do mais barato para o mais caro.
      */
+    @Operation(summary = "Lista os veículos à venda, do mais barato para o mais caro")
     @GetMapping("/available")
     public PageResponse<VehicleResponse> listAvailable(
             @RequestParam(defaultValue = "0") @Min(0) int page,
@@ -43,6 +47,7 @@ public class VehicleController {
      * Veículos vendidos (pagamento confirmado), ordenados por preço do mais
      * barato para o mais caro.
      */
+    @Operation(summary = "Lista os veículos vendidos, do mais barato para o mais caro")
     @GetMapping("/sold")
     public PageResponse<VehicleResponse> listSold(
             @RequestParam(defaultValue = "0") @Min(0) int page,
