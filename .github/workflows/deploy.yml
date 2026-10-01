@@ -44,8 +44,10 @@ jobs:
 
       - name: Criar o cluster kind
         run: |
-          curl -sSfLo /usr/local/bin/kind "https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}/kind-linux-amd64"
-          chmod +x /usr/local/bin/kind
+          curl -sSfLo "$RUNNER_TEMP/kind" "https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}/kind-linux-amd64"
+          chmod +x "$RUNNER_TEMP/kind"
+          sudo mv "$RUNNER_TEMP/kind" /usr/local/bin/kind
+          kind version
           kind create cluster --name "$CLUSTER_NAME" --wait 120s
           kubectl cluster-info
 
