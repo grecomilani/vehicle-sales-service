@@ -1,5 +1,6 @@
 package com.grecomilani.vehiclesales.domain.vehicle;
 
+import com.grecomilani.vehiclesales.domain.exception.ConflictException;
 import com.grecomilani.vehiclesales.domain.exception.DomainException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -120,6 +121,36 @@ class VehicleTest {
         Vehicle vehicle = new Vehicle(ID, "Toyota", "Corolla", 2022, "Prata", PRICE, status, 1L);
 
         assertThatThrownBy(vehicle::reserve).isInstanceOf(VehicleNotAvailableException.class);
+        assertThat(vehicle.getStatus()).isEqualTo(status);
+    }
+
+    @Test
+    void markAsSoldShouldConcludeSaleOfReservedVehicle() {
+        Vehicle vehicle = new Vehicle(ID, "Toyota", "Corolla", 2022, "Prata", PRICE, VehicleStatus.RESERVED, 1L);
+
+        vehicle.markAsSold();
+
+        assertThat(vehicle.getStatus()).isEqualTo(VehicleStatus.SOLD);
+    }
+
+    @Test
+    void releaseShouldMakeReservedVehicleAvailableAgain() {
+        Vehicle vehicle = new Vehicle(ID, "Toyota", "Corolla", 2022, "Prata", PRICE, VehicleStatus.RESERVED, 1L);
+
+        vehicle.release();
+
+        assertThat(vehicle.getStatus()).isEqualTo(VehicleStatus.AVAILABLE);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"AVAILABLE", "SOLD"})
+    void markAsSoldAndReleaseShouldRequireReservedVehicle(VehicleStatus status) {
+        Vehicle vehicle = new Vehicle(ID, "Toyota", "Corolla", 2022, "Prata", PRICE, status, 1L);
+
+        assertThatThrownBy(vehicle::markAsSold)
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("não está reservado");
+        assertThatThrownBy(vehicle::release).isInstanceOf(ConflictException.class);
         assertThat(vehicle.getStatus()).isEqualTo(status);
     }
 

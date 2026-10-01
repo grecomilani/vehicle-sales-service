@@ -129,6 +129,7 @@ recebem `409`.
 | Método | Rota | Descrição |
 |---|---|---|
 | `PUT` | `/internal/vehicles/{id}` | Cria ou atualiza um veículo (sincronização do cadastro) |
+| `PATCH` | `/internal/sales/{paymentCode}/payment` | Registra o resultado do pagamento (`PAID` ou `CANCELED`) |
 
 Exemplo:
 
@@ -145,6 +146,23 @@ curl -X PUT http://localhost:8081/internal/vehicles/3f1c2a4e-8b7d-4c1a-9e2f-1a2b
 | `400 Bad Request` | Campos inválidos (a resposta lista os campos em `errors`) |
 | `409 Conflict` | Veículo reservado ou vendido não pode ser alterado |
 | `422 Unprocessable Content` | Regra de negócio violada (ex.: ano fora do intervalo permitido) |
+
+#### Resultado do pagamento
+
+```bash
+curl -X PATCH http://localhost:8081/internal/sales/{paymentCode}/payment \
+  -H 'Content-Type: application/json' \
+  -d '{"status":"PAID"}'
+```
+
+| Resultado | Venda | Veículo |
+|---|---|---|
+| `PAID` | `PAID` | `SOLD` |
+| `CANCELED` | `CANCELED` | `AVAILABLE` (volta para a listagem e pode ser comprado de novo) |
+
+A operação é idempotente: reenviar o mesmo resultado retorna `200` sem alterar
+nada. Um pagamento já finalizado não pode mudar para o outro resultado (`409`).
+Código de pagamento inexistente retorna `404`.
 
 Os erros seguem o formato [Problem Details (RFC 9457)](https://www.rfc-editor.org/rfc/rfc9457).
 

@@ -1,5 +1,6 @@
 package com.grecomilani.vehiclesales.domain.vehicle;
 
+import com.grecomilani.vehiclesales.domain.exception.ConflictException;
 import com.grecomilani.vehiclesales.domain.exception.DomainException;
 
 import java.math.BigDecimal;
@@ -63,6 +64,29 @@ public class Vehicle {
     public void reserve() {
         requireAvailable();
         this.status = VehicleStatus.RESERVED;
+    }
+
+    /**
+     * Conclui a venda do veículo reservado, após a confirmação do pagamento.
+     */
+    public void markAsSold() {
+        requireReserved();
+        this.status = VehicleStatus.SOLD;
+    }
+
+    /**
+     * Libera o veículo reservado para venda novamente, após o cancelamento do pagamento.
+     */
+    public void release() {
+        requireReserved();
+        this.status = VehicleStatus.AVAILABLE;
+    }
+
+    private void requireReserved() {
+        if (status != VehicleStatus.RESERVED) {
+            throw new ConflictException("O veículo %s não está reservado (status atual: %s)."
+                    .formatted(id, status));
+        }
     }
 
     private void requireAvailable() {

@@ -6,6 +6,7 @@ import com.grecomilani.vehiclesales.application.port.VehicleRepository;
 import com.grecomilani.vehiclesales.application.usecase.ListAvailableVehiclesUseCase;
 import com.grecomilani.vehiclesales.application.usecase.PurchaseVehicleUseCase;
 import com.grecomilani.vehiclesales.application.usecase.SyncVehicleUseCase;
+import com.grecomilani.vehiclesales.application.usecase.UpdatePaymentStatusUseCase;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,6 +37,13 @@ public class UseCaseConfig {
                                                   TransactionRunner transactionRunner,
                                                   Clock clock) {
         return new PurchaseVehicleUseCase(vehicleRepository, saleRepository, transactionRunner, clock);
+    }
+
+    @Bean
+    UpdatePaymentStatusUseCase updatePaymentStatusUseCase(SaleRepository saleRepository,
+                                                          VehicleRepository vehicleRepository,
+                                                          TransactionRunner transactionRunner) {
+        return new UpdatePaymentStatusUseCase(saleRepository, vehicleRepository, transactionRunner);
     }
 
     /**
