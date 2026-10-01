@@ -25,11 +25,17 @@ public class Vehicle {
     private String color;
     private BigDecimal price;
     private VehicleStatus status;
+    private final Long version;
 
+    /**
+     * @param version versão para controle de concorrência otimista;
+     *                {@code null} para um veículo ainda não persistido
+     */
     public Vehicle(UUID id, String brand, String model, int year, String color,
-                   BigDecimal price, VehicleStatus status) {
+                   BigDecimal price, VehicleStatus status, Long version) {
         this.id = Objects.requireNonNull(id, "id é obrigatório");
         this.status = Objects.requireNonNull(status, "status é obrigatório");
+        this.version = version;
         applyDetails(brand, model, year, color, price);
     }
 
@@ -38,7 +44,7 @@ public class Vehicle {
      */
     public static Vehicle create(UUID id, String brand, String model, int year,
                                  String color, BigDecimal price) {
-        return new Vehicle(id, brand, model, year, color, price, VehicleStatus.AVAILABLE);
+        return new Vehicle(id, brand, model, year, color, price, VehicleStatus.AVAILABLE, null);
     }
 
     /**
@@ -47,10 +53,22 @@ public class Vehicle {
      * de características.
      */
     public void updateDetails(String brand, String model, int year, String color, BigDecimal price) {
+        requireAvailable();
+        applyDetails(brand, model, year, color, price);
+    }
+
+    /**
+     * Reserva o veículo para uma compra, enquanto o pagamento não é confirmado.
+     */
+    public void reserve() {
+        requireAvailable();
+        this.status = VehicleStatus.RESERVED;
+    }
+
+    private void requireAvailable() {
         if (status != VehicleStatus.AVAILABLE) {
             throw new VehicleNotAvailableException(id, status);
         }
-        applyDetails(brand, model, year, color, price);
     }
 
     private void applyDetails(String brand, String model, int year, String color, BigDecimal price) {
@@ -109,5 +127,9 @@ public class Vehicle {
 
     public VehicleStatus getStatus() {
         return status;
+    }
+
+    public Long getVersion() {
+        return version;
     }
 }

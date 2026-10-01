@@ -43,7 +43,7 @@ class VehicleEntity {
     private VehicleStatus status;
 
     @Version
-    private long version;
+    private Long version;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -55,24 +55,26 @@ class VehicleEntity {
         // exigido pelo JPA
     }
 
+    /**
+     * Converte o veículo do domínio, preservando a versão lida do banco: ao
+     * salvar, o JPA compara essa versão com a atual e rejeita a alteração se
+     * outra transação tiver modificado o veículo nesse meio-tempo.
+     */
     static VehicleEntity from(Vehicle vehicle) {
         VehicleEntity entity = new VehicleEntity();
         entity.id = vehicle.getId();
-        entity.copyFrom(vehicle);
+        entity.brand = vehicle.getBrand();
+        entity.model = vehicle.getModel();
+        entity.year = vehicle.getYear();
+        entity.color = vehicle.getColor();
+        entity.price = vehicle.getPrice();
+        entity.status = vehicle.getStatus();
+        entity.version = vehicle.getVersion();
         return entity;
     }
 
-    void copyFrom(Vehicle vehicle) {
-        this.brand = vehicle.getBrand();
-        this.model = vehicle.getModel();
-        this.year = vehicle.getYear();
-        this.color = vehicle.getColor();
-        this.price = vehicle.getPrice();
-        this.status = vehicle.getStatus();
-    }
-
     Vehicle toDomain() {
-        return new Vehicle(id, brand, model, year, color, price, status);
+        return new Vehicle(id, brand, model, year, color, price, status, version);
     }
 
     @PrePersist
