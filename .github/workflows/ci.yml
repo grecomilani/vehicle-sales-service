@@ -69,6 +69,23 @@ jobs:
       - name: Build da imagem
         run: docker build -t ${{ github.event.repository.name }}:ci .
 
+  k8s-manifests:
+    name: Validação dos manifests Kubernetes
+    runs-on: ubuntu-latest
+    env:
+      KUBECONFORM_VERSION: v0.8.0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Instalar kubeconform
+        run: |
+          curl -sSfL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
+            | tar -xz -C /usr/local/bin kubeconform
+
+      - name: Renderizar (kustomize) e validar contra os schemas do Kubernetes
+        run: kubectl kustomize k8s | kubeconform -strict -summary -
+
   # Git Flow automatizado: com o build verde, abre o Pull Request e habilita
   # o merge automático
   #   feature/*  -> develop
@@ -77,7 +94,7 @@ jobs:
   # Para segurar um PR (ex.: revisão manual), adicione a label "hold".
   auto-pull-request:
     name: Abrir Pull Request e merge automático
-    needs: [build-and-test, docker-image]
+    needs: [build-and-test, docker-image, k8s-manifests]
     if: >-
       github.event_name == 'push' &&
       (startsWith(github.ref_name, 'feature/') || github.ref_name == 'develop')
