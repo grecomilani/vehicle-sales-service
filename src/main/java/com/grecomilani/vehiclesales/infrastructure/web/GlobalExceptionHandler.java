@@ -1,12 +1,15 @@
 package com.grecomilani.vehiclesales.infrastructure.web;
 
 import com.grecomilani.vehiclesales.domain.exception.DomainException;
+import com.grecomilani.vehiclesales.domain.exception.NotFoundException;
 import com.grecomilani.vehiclesales.domain.vehicle.VehicleNotAvailableException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -26,6 +29,31 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(VehicleNotAvailableException.class)
     ProblemDetail handleVehicleNotAvailable(VehicleNotAvailableException ex) {
         return problem(HttpStatus.CONFLICT, "Veículo indisponível", ex.getMessage());
+    }
+
+    /**
+     * Outra transação alterou o mesmo registro ao mesmo tempo
+     * (ex.: duas compras simultâneas do mesmo veículo).
+     */
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    ProblemDetail handleConcurrentModification(ObjectOptimisticLockingFailureException ex) {
+        return problem(HttpStatus.CONFLICT, "Conflito de concorrência",
+                "O registro foi alterado por outra operação. Consulte novamente e tente outra vez.");
+    }
+
+    /**
+     * Restrição do banco violada, por exemplo o índice que impede duas vendas
+     * ativas para o mesmo veículo.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    ProblemDetail handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        return problem(HttpStatus.CONFLICT, "Conflito de dados",
+                "A operação conflita com o estado atual dos dados.");
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    ProblemDetail handleNotFound(NotFoundException ex) {
+        return problem(HttpStatus.NOT_FOUND, "Recurso não encontrado", ex.getMessage());
     }
 
     @ExceptionHandler(DomainException.class)

@@ -19,6 +19,10 @@ spring:
 server:
   port: ${SERVER_PORT:8081}
 
+app:
+  # Fuso horário da revenda, usado nas regras que dependem da data atual
+  time-zone: ${APP_TIME_ZONE:America/Sao_Paulo}
+
 management:
   endpoints:
     web:

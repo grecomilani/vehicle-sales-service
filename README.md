@@ -81,6 +81,7 @@ infrastructure/  Adaptadores: web (controllers), persistência (JPA) e configura
 | Método | Rota | Descrição |
 |---|---|---|
 | `GET` | `/vehicles/available?page=0&size=20` | Veículos à venda, do mais barato para o mais caro |
+| `POST` | `/sales` | Efetua a compra de um veículo |
 
 A listagem é paginada: `page` começa em `0`, e `size` tem padrão `20` e máximo
 `100`. Exemplo de resposta:
@@ -97,6 +98,31 @@ A listagem é paginada: `page` começa em `0`, e `size` tem padrão `20` e máxi
   "totalPages": 1
 }
 ```
+
+#### Compra de veículo
+
+```bash
+curl -X POST http://localhost:8081/sales \
+  -H 'Content-Type: application/json' \
+  -d '{"vehicleId":"3f1c2a4e-8b7d-4c1a-9e2f-1a2b3c4d5e6f","buyerCpf":"529.982.247-25","saleDate":"2026-10-01"}'
+```
+
+A compra reserva o veículo (ele deixa de aparecer na listagem de veículos à venda)
+e cria a venda com o pagamento `PENDING`. O `paymentCode` retornado é usado pela
+entidade processadora de pagamentos para informar se o pagamento foi efetuado
+ou cancelado.
+
+| Status | Quando |
+|---|---|
+| `201 Created` | Venda criada, aguardando pagamento |
+| `400 Bad Request` | Dados inválidos (ex.: CPF inválido) |
+| `404 Not Found` | Veículo não encontrado |
+| `409 Conflict` | Veículo já reservado/vendido, ou compra simultânea do mesmo veículo |
+| `422 Unprocessable Content` | Data da venda no futuro |
+
+Compras simultâneas do mesmo veículo são tratadas com controle de concorrência
+otimista e com um índice único no banco: apenas uma é efetivada e as demais
+recebem `409`.
 
 ### Endpoints internos (chamados pelo `vehicle-platform-api`)
 
@@ -150,6 +176,7 @@ A aplicação sobe na porta `8081` (altere com a variável `SERVER_PORT`).
 | `DB_NAME` | `vehicle_sales` | Nome do banco |
 | `DB_USERNAME` | `vehicle_sales` | Usuário do banco |
 | `DB_PASSWORD` | `vehicle_sales` | Senha do banco |
+| `APP_TIME_ZONE` | `America/Sao_Paulo` | Fuso usado nas regras de data (ex.: data da venda) |
 
 Para verificar se ela está no ar:
 

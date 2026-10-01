@@ -68,7 +68,7 @@ class SyncVehicleUseCaseTest {
     @Test
     void shouldNotUpdateVehicleThatIsNotAvailable() {
         Vehicle reserved = new Vehicle(ID, "Toyota", "Corolla", 2022, "Prata",
-                new BigDecimal("85000.00"), VehicleStatus.RESERVED);
+                new BigDecimal("85000.00"), VehicleStatus.RESERVED, 1L);
         when(vehicleRepository.findById(ID)).thenReturn(Optional.of(reserved));
 
         assertThatThrownBy(() -> useCase.execute(command("Corolla", "70000.00")))
