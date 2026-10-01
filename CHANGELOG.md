@@ -58,3 +58,9 @@ seção `[Unreleased]` é convertida na nova versão.
   dependem do Spring e são registrados em `UseCaseConfig`.
 - Respostas de erro padronizadas no formato Problem Details (RFC 9457).
 - Mensagens de validação sempre em português (`spring.web.locale: pt_BR`).
+- Listagem de veículos à venda (`GET /vehicles/available`): retorna apenas os
+  veículos `AVAILABLE`, ordenados por preço do mais barato para o mais caro
+  (com desempate pelo `id`, para paginação estável).
+  - Paginação por `page` (padrão `0`) e `size` (padrão `20`, máximo `100`).
+  - Resposta com `content`, `page`, `size`, `totalElements` e `totalPages`.
+  - Parâmetros inválidos retornam 400 com os detalhes em `errors`.
