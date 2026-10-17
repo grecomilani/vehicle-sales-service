@@ -30,7 +30,7 @@ listagem e compra, e usa um banco de dados segregado.
 
 ## Fluxo de trabalho (Git Flow)
 
-- `main`: código em produção. O deploy é disparado pelo merge nesta branch.
+- `main`: branch principal de release. Um merge dispara o workflow de CD e a implantação temporária de validação no Kubernetes (não existe cluster de produção permanente nesta esteira).
 - `develop`: branch de integração.
 - `feature/<nome>`: criada a partir de `develop` e integrada via Pull Request.
 
@@ -74,6 +74,17 @@ O workflow [`deploy.yml`](.github/workflows/deploy.yml) roda a cada merge na
    confirmação de pagamento e listagem de vendidos.
 6. Em caso de falha, o job imprime o diagnóstico (pods, eventos e logs).
 
+**Limitação do ambiente de CD:** o cluster Kubernetes criado com `kind` existe apenas durante a execução do GitHub Actions; ao encerrar o runner, o cluster e seus recursos deixam de estar disponíveis. A pipeline comprova o deploy, o rollout e os smoke tests em infraestrutura efêmera, mas **não mantém um serviço público hospedado continuamente**. O workflow pode também ser iniciado manualmente (`workflow_dispatch`); o trigger automático é um `push` na `main`, normalmente gerado por merge.
+
+### Evidências verificáveis (execuções de 01/10/2026)
+
+| Evidência | Execução |
+|---|---|
+| CI: testes, gate JaCoCo de **80% de linhas**, build Docker e schemas Kubernetes | [GitHub Actions — CI](https://github.com/grecomilani/vehicle-sales-service/actions/runs/36810747655) |
+| CD: deploy em cluster kind, rollout e smoke test HTTP | [GitHub Actions — CD](https://github.com/grecomilani/vehicle-sales-service/actions/runs/36810747613) |
+
+O resumo de cobertura está na execução da CI, no job **Build, testes e cobertura (mínimo 80%)**; o relatório HTML é publicado como artefato `jacoco-report`. Essas execuções demonstram o resultado **naquela revisão**, não atestam automaticamente commits posteriores. Os links exigem permissão de acesso aos repositórios privados.
+
 ### Configuração necessária no GitHub
 
 1. **Token de automação** (`PR_AUTOMATION_TOKEN`): merges feitos com o token
@@ -105,6 +116,26 @@ domain/          Regras de negócio (Vehicle, VehicleStatus, exceções)
 application/     Casos de uso e portas (interfaces), sem dependência do Spring
 infrastructure/  Adaptadores: web (controllers), persistência (JPA) e configuração
 ```
+
+### Visão da arquitetura
+
+```mermaid
+flowchart TB
+    U["Cliente HTTP / Postman / futuro frontend"]
+    P["vehicle-platform-api :8080<br/>Cadastro, edição, webhook"]
+    S["vehicle-sales-service :8081<br/>Listagem, reserva e venda"]
+    D1[("PostgreSQL<br/>vehicle_platform")]
+    D2[("PostgreSQL<br/>vehicle_sales")]
+    PG["Processador de pagamento<br/>(simulado nos testes)"]
+    U -->|"POST/PUT/GET vehicles"| P
+    U -->|"GET vehicles/available e sold; POST sales"| S
+    P -->|"PUT /internal/vehicles/{id}<br/>PATCH /internal/sales/{paymentCode}/payment"| S
+    PG -->|"POST /webhooks/payments"| P
+    P --> D1
+    S --> D2
+```
+
+Os bancos são isolados: nenhum serviço consulta diretamente as tabelas do outro. O serviço principal sincroniza o cadastro e encaminha resultados de pagamento por HTTP; o serviço de vendas controla disponibilidade, reserva, compra e o estado final da venda.
 
 ## API
 
@@ -202,6 +233,25 @@ Código de pagamento inexistente retorna `404`.
 
 Os erros seguem o formato [Problem Details (RFC 9457)](https://www.rfc-editor.org/rfc/rfc9457).
 
+### Testar a compra e a confirmação do pagamento
+
+A compra é feita neste serviço, mas **o webhook público é exposto pela API principal**, em `POST http://localhost:8080/webhooks/payments`. Para testar a integração real, suba os dois serviços com o [Compose da solução completa no repositório principal](https://github.com/grecomilani/vehicle-platform-api/blob/main/compose.solution.yaml).
+
+1. Cadastre um veículo usando `POST http://localhost:8080/vehicles` e copie o `id`.
+2. Faça `POST http://localhost:8081/sales` com `vehicleId`, CPF válido e `saleDate` não futura; copie o `paymentCode` retornado.
+3. Confirme a compra simulando a processadora:
+
+```bash
+curl -i -X POST http://localhost:8080/webhooks/payments \
+  -H 'Content-Type: application/json' \
+  -d '{"paymentCode":"CODIGO_RETORNADO_PELA_COMPRA","status":"PAID"}'
+curl -i http://localhost:8081/vehicles/sold
+```
+
+O veículo deve aparecer entre os vendidos. Reenviar `PAID` é idempotente (**200**); tentar `CANCELED` após confirmação gera conflito (**409**). Para o cenário `CANCELED`, **cadastre outro veículo, crie outra compra pendente** e envie o novo código ao mesmo webhook com status `CANCELED`: o veículo volta a `GET /vehicles/available`. Código desconhecido retorna **404**; status inválido retorna **400**. Não há processador de pagamento real nessa demonstração.
+
+A rota interna `PATCH /internal/sales/{paymentCode}/payment` é utilizada **pela API principal** no encaminhamento HTTP; não é o webhook externo.
+
 ## Como executar localmente
 
 Pré-requisitos: JDK 25 e Docker. Não é preciso instalar o Maven: o projeto usa o
@@ -243,11 +293,7 @@ curl http://localhost:8081/actuator/health
 A imagem é gerada por um Dockerfile multi-stage: compila com o Maven Wrapper e
 roda com a JRE 25, como usuário não-root.
 
-```bash
-docker build -t vehicle-sales-service .
-docker compose up -d   # banco de dados do serviço
-docker run --rm -p 8081:8081 --network host -e DB_HOST=localhost -e DB_PORT=5433 vehicle-sales-service
-```
+Para uma execução portátil, prefira o **Docker Compose da solução completa**, que configura redes, dependências e os dois bancos automaticamente. Se optar por rodar apenas este serviço, use `docker compose up -d` para iniciar o banco e `./mvnw spring-boot:run` para iniciar a API. Evite combinar `--network host` e `-p` no `docker run`: o comportamento varia entre sistemas e, no modo host, o mapeamento de portas não é necessário.
 
 Para subir **a solução completa** (os dois serviços e os dois bancos), use o
 `compose.solution.yaml` do repositório
