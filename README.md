@@ -18,6 +18,15 @@ seu próprio banco de dados:
 O serviço de vendas é isolado para suportar picos de acesso nos endpoints de
 listagem e compra, e usa um banco de dados segregado.
 
+## Diagramas técnicos completos
+
+Para evitar um único diagrama excessivamente denso, a documentação detalhada está separada em duas visualizações Mermaid, renderizadas nativamente pelo GitHub:
+
+1. **[Arquitetura de aplicação e infraestrutura](docs/architecture.md)** — dois microsserviços, Deployments, Services, ConfigMaps, Secrets, bancos PostgreSQL com StatefulSets/PVCs, pipeline CI/CD e escalonamento HPA do serviço de vendas.
+2. **[Fluxo ponta a ponta (sequência)](docs/flow.md)** — cadastro, sincronização HTTP, listagem, compra, reserva, `paymentCode`, webhook e cenários `PAID` / `CANCELED`, incluindo bancos e serviços envolvidos.
+
+Os diagramas representam o ambiente Kubernetes **efêmero** empregado no GitHub Actions, e não um cluster permanentemente hospedado.
+
 ## Stack
 
 - Java 25 (LTS)
