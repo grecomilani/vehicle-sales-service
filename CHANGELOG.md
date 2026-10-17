@@ -11,6 +11,11 @@ seção `[Unreleased]` é convertida na nova versão.
 
 ## [Unreleased]
 
+### Documentation
+- README: diagrama Mermaid dos microsserviços e bancos segregados, fluxo de webhook com cenários PAID/CANCELED e idempotência, evidências de CI/CD e explicação do cluster kind efêmero.
+- Esclarece a branch de release e as limitações do deploy; aprimora orientações de execução e integração HTTP.
+
+
 ### Added
 - Estrutura inicial do repositório: `README.md`, `.gitignore`, `.editorconfig`
   e `CHANGELOG.md`.
