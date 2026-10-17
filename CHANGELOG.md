@@ -12,6 +12,9 @@ seção `[Unreleased]` é convertida na nova versão.
 ## [Unreleased]
 
 ### Documentation
+- Adicionados diagramas Mermaid em `docs/architecture.md` e `docs/flow.md` para infraestrutura Kubernetes, componentes das APIs e sequência ponta a ponta com pagamentos; links publicados no README.
+
+### Documentation
 - README: diagrama Mermaid dos microsserviços e bancos segregados, fluxo de webhook com cenários PAID/CANCELED e idempotência, evidências de CI/CD e explicação do cluster kind efêmero.
 - Esclarece a branch de release e as limitações do deploy; aprimora orientações de execução e integração HTTP.
 
