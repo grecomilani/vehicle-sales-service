@@ -104,14 +104,19 @@ jobs:
     runs-on: ubuntu-latest
     env:
       KUBECONFORM_VERSION: v0.8.0
+      # SHA-256 do kubeconform-linux-amd64.tar.gz da versão acima (arquivo CHECKSUMS da release)
+      KUBECONFORM_SHA256: 9bc2bffbf71f261128533edaf912153948b7ff238f9a531ae6d34466ec287883
     steps:
       - name: Checkout
         uses: actions/checkout@v5
 
       - name: Instalar kubeconform
         run: |
-          curl -sSfL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
-            | tar -xz -C /usr/local/bin kubeconform
+          # Somente HTTPS (inclusive nos redirecionamentos) e checksum conferido antes de extrair
+          curl --proto '=https' --tlsv1.2 -sSfLo "$RUNNER_TEMP/kubeconform.tar.gz" \
+            "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz"
+          echo "${KUBECONFORM_SHA256}  $RUNNER_TEMP/kubeconform.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/kubeconform.tar.gz" -C /usr/local/bin kubeconform
 
       - name: Renderizar (kustomize) e validar contra os schemas do Kubernetes
         run: kubectl kustomize k8s | kubeconform -strict -summary -

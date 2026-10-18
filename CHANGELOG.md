@@ -11,6 +11,9 @@ seção `[Unreleased]` é convertida na nova versão.
 
 ## [Unreleased]
 
+### Security
+- Pipeline: os downloads do kubeconform (CI) e do kind (CD) passam a exigir HTTPS também nos redirecionamentos (`--proto '=https'`) e a conferir o SHA-256 do binário antes de usá-lo. Corrige a vulnerabilidade apontada pelo SonarQube Cloud.
+
 ### Changed
 - Pipeline: o job `auto-pull-request` só abre o PR (`feature/*` → `develop` e `develop` → `main`) depois que todos os jobs de verificação passam e não faz mais merge automático; o merge passa a ser manual. A opção *Allow auto-merge* do repositório deixa de ser necessária.
 
