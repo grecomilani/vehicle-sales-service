@@ -2,6 +2,10 @@
 
 [![CI](https://github.com/grecomilani/vehicle-sales-service/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/grecomilani/vehicle-sales-service/actions/workflows/ci.yml)
 
+[![Quality gate status](https://sonarcloud.io/api/project_badges/measure?project=grecomilani_vehicle-sales-service&metric=alert_status&token=f34d491b60cde4b5a91f592de1105c3979b0327b)](https://sonarcloud.io/summary/new_code?id=grecomilani_vehicle-sales-service)
+
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=grecomilani_vehicle-sales-service&metric=coverage&token=f34d491b60cde4b5a91f592de1105c3979b0327b)](https://sonarcloud.io/summary/new_code?id=grecomilani_vehicle-sales-service)
+
 Serviço de **venda de veículos** da plataforma de revenda de veículos automotores,
 desenvolvido como Trabalho Substitutivo do Tech Challenge — Fase 4 (Pós-Tech SOAT).
 

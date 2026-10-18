@@ -21,6 +21,7 @@ seção `[Unreleased]` é convertida na nova versão.
 - Análise de qualidade no SonarQube Cloud (organização `grecomilani`, projeto `grecomilani_vehicle-sales-service`) no job de build do CI, com a cobertura do JaCoCo (`target/site/jacoco/jacoco.xml`). Roda em pull requests e nos pushes em `develop`/`main`; exige o secret `SONAR_TOKEN`.
 
 ### Documentation
+- README: badges de Coverage e Quality Gate do SonarQube Cloud (projeto `grecomilani_vehicle-sales-service`) logo abaixo do título.
 - Adicionados diagramas Mermaid em `docs/architecture.md` e `docs/flow.md` para infraestrutura Kubernetes, componentes das APIs e sequência ponta a ponta com pagamentos; links publicados no README.
 
 ### Documentation
