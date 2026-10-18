@@ -18,6 +18,8 @@ permissions:
 
 env:
   KIND_VERSION: v0.33.0
+  # SHA-256 do kind-linux-amd64 da versão acima (arquivo .sha256sum da release)
+  KIND_SHA256: aee6151561422756b764a4ae28e7f44cda5af5a9eead3cc9985112b1de8d8e0d
   METRICS_SERVER_VERSION: v0.8.1
   CLUSTER_NAME: revenda
   NAMESPACE: revenda-veiculos
@@ -45,7 +47,8 @@ jobs:
 
       - name: Criar o cluster kind
         run: |
-          curl -sSfLo "$RUNNER_TEMP/kind" "https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}/kind-linux-amd64"
+          curl --proto '=https' --tlsv1.2 -sSfLo "$RUNNER_TEMP/kind" "https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}/kind-linux-amd64"
+          echo "${KIND_SHA256}  $RUNNER_TEMP/kind" | sha256sum -c -
           chmod +x "$RUNNER_TEMP/kind"
           sudo mv "$RUNNER_TEMP/kind" /usr/local/bin/kind
           kind version
