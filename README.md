@@ -56,16 +56,13 @@ O workflow [`ci.yml`](.github/workflows/ci.yml) roda em todo Pull Request para
    a cobertura ficar abaixo do mínimo.
 4. Publicação do resumo de cobertura no job e do relatório completo como
    artefato (`jacoco-report`).
-5. **Pull Request e merge automáticos** (job `auto-pull-request`), quando o build está verde:
+5. **Pull Request automático** (job `auto-pull-request`), depois que todos os
+   jobs de verificação passam:
    - push em `feature/*` abre o PR para `develop`;
-   - push em `develop` abre o PR de release para `main`;
-   - em seguida habilita o **merge automático**: o PR é mergeado assim que
-     todos os checks obrigatórios estiverem verdes.
+   - push em `develop` abre o PR de release para `main`.
 
-   Assim, um push em `feature/*` percorre sozinho o fluxo
-   `feature → develop → main`. Para segurar um PR (por exemplo, para revisão
-   manual), adicione a label **`hold`**: o PR continua aberto e o merge fica
-   manual.
+   O pipeline **não faz merge**: o merge de cada PR é feito manualmente pelo
+   GitHub, depois da revisão e com os checks verdes.
 
 ### Deploy contínuo (CD)
 
@@ -96,20 +93,18 @@ O resumo de cobertura está na execução da CI, no job **Build, testes e cobert
 
 ### Configuração necessária no GitHub
 
-1. **Token de automação** (`PR_AUTOMATION_TOKEN`): merges feitos com o token
-   padrão do Actions não disparam novos workflows, então sem este token o fluxo
-   pararia na `develop`.
+1. **Token de automação** (`PR_AUTOMATION_TOKEN`): PRs abertos com o token
+   padrão do Actions não disparam novos workflows, então sem este token os
+   checks do próprio PR não rodariam.
    - Crie um *fine-grained personal access token* em *Settings → Developer
      settings → Personal access tokens → Fine-grained tokens*, com acesso aos
      repositórios do projeto e as permissões **Contents: Read and write**,
      **Pull requests: Read and write** e **Workflows: Read and write**.
    - Cadastre-o em *Settings → Secrets and variables → Actions → New repository
      secret* com o nome `PR_AUTOMATION_TOKEN`.
-2. **Permitir merge automático:** *Settings → General → Pull Requests* → marcar
-   **Allow auto-merge**.
-3. **Excluir branches após o merge** (recomendado): na mesma seção, marcar
-   **Automatically delete head branches**.
-4. **Proteção de `main` e `develop`:** *Settings → Rules → Rulesets → New ruleset →
+2. **Excluir branches após o merge** (recomendado): *Settings → General → Pull
+   Requests* → marcar **Automatically delete head branches**.
+3. **Proteção de `main` e `develop`:** *Settings → Rules → Rulesets → New ruleset →
    Import a ruleset* e selecionar
    [`.github/rulesets/protect-main-develop.json`](.github/rulesets/protect-main-develop.json).
    O ruleset bloqueia push direto, force push e exclusão das branches e exige PR

@@ -116,14 +116,13 @@ jobs:
       - name: Renderizar (kustomize) e validar contra os schemas do Kubernetes
         run: kubectl kustomize k8s | kubeconform -strict -summary -
 
-  # Git Flow automatizado: com o build verde, abre o Pull Request e habilita
-  # o merge automático
+  # Git Flow automatizado: depois que todos os jobs de verificação passam,
+  # abre o Pull Request
   #   feature/*  -> develop
   #   develop    -> main (release)
-  # O merge acontece quando todos os checks obrigatórios do PR estiverem verdes.
-  # Para segurar um PR (ex.: revisão manual), adicione a label "hold".
+  # O pipeline não faz merge: o merge é sempre manual, pelo GitHub.
   auto-pull-request:
-    name: Abrir Pull Request e merge automático
+    name: Abrir Pull Request
     needs: [build-and-test, docker-image, k8s-manifests]
     if: >-
       github.event_name == 'push' &&
@@ -133,16 +132,16 @@ jobs:
       contents: write
       pull-requests: write
     env:
-      # PR_AUTOMATION_TOKEN: PAT do dono do repositório. É necessário para o
-      # fluxo completo: merges feitos com o GITHUB_TOKEN padrão não disparam
-      # novos workflows, então o merge na develop não abriria a release.
+      # PR_AUTOMATION_TOKEN: PAT do dono do repositório. PRs abertos com o
+      # GITHUB_TOKEN padrão não disparam workflows, então sem este token os
+      # checks do próprio PR não rodariam.
       GH_TOKEN: ${{ secrets.PR_AUTOMATION_TOKEN || github.token }}
       HAS_PAT: ${{ secrets.PR_AUTOMATION_TOKEN != '' }}
       GH_REPO: ${{ github.repository }}
       HEAD_BRANCH: ${{ github.ref_name }}
 
     steps:
-      - name: Abrir PR e habilitar merge automático
+      - name: Abrir PR
         run: |
           if [ "$HEAD_BRANCH" = "develop" ]; then
             BASE_BRANCH=main
@@ -166,7 +165,7 @@ jobs:
             COMMITS=$(gh api "repos/$GH_REPO/compare/$BASE_BRANCH...$HEAD_BRANCH" \
               --jq '.commits[] | "- " + (.commit.message | split("\n")[0])')
 
-            BODY=$(printf 'PR aberto automaticamente pelo pipeline de CI (Git Flow).\n\n**%s** -> **%s**\n\n### Commits\n%s\n\n### Checklist\n- [ ] CHANGELOG.md atualizado\n- [ ] Build, testes e cobertura (mínimo 80%%) verdes\n\n> Merge automático habilitado. Para segurar este PR, adicione a label `hold`.\n' \
+            BODY=$(printf 'PR aberto automaticamente pelo pipeline de CI (Git Flow).\n\n**%s** -> **%s**\n\n### Commits\n%s\n\n### Checklist\n- [ ] CHANGELOG.md atualizado\n- [ ] Build, testes e cobertura (mínimo 80%%) verdes\n\n> O merge é manual: revise e faça o merge pelo GitHub quando os checks estiverem verdes.\n' \
               "$HEAD_BRANCH" "$BASE_BRANCH" "$COMMITS")
 
             if ! PR_URL=$(gh pr create --base "$BASE_BRANCH" --head "$HEAD_BRANCH" --title "$TITLE" --body "$BODY"); then
@@ -180,35 +179,3 @@ jobs:
             PR_NUMBER="${PR_URL##*/}"
             echo "PR #$PR_NUMBER criado: $PR_URL"
           fi
-
-          if gh pr view "$PR_NUMBER" --json labels --jq '.labels[].name' | grep -qx 'hold'; then
-            echo "PR #$PR_NUMBER está com a label 'hold'. Merge automático não habilitado."
-            exit 0
-          fi
-
-          if [ "$HAS_PAT" != "true" ]; then
-            echo "::warning::Secret PR_AUTOMATION_TOKEN não configurado: o merge será feito com o GITHUB_TOKEN e não disparará o pipeline da branch de destino."
-          fi
-
-          # Com checks pendentes, o GitHub agenda o merge (auto-merge); se o PR já
-          # estiver pronto, o merge é feito na hora. Logo após a criação do PR, o
-          # check do próprio PR ainda pode estar sendo registrado e o GitHub recusa
-          # a operação: por isso há novas tentativas.
-          for attempt in $(seq 1 30); do
-            STATE=$(gh pr view "$PR_NUMBER" --json state,autoMergeRequest \
-              --jq '.state + (if .autoMergeRequest then "+auto" else "" end)')
-            case "$STATE" in
-              MERGED*) echo "PR #$PR_NUMBER mergeado."; exit 0 ;;
-              CLOSED*) echo "PR #$PR_NUMBER foi fechado sem merge. Nada a fazer."; exit 0 ;;
-              *+auto) echo "Merge automático habilitado no PR #$PR_NUMBER."; exit 0 ;;
-            esac
-
-            if gh pr merge "$PR_NUMBER" --auto --merge; then
-              continue
-            fi
-            echo "Tentativa $attempt de 30 não concluída; nova tentativa em 20s."
-            sleep 20
-          done
-
-          echo "::error::Não foi possível fazer o merge do PR #$PR_NUMBER. Verifique se 'Allow auto-merge' está habilitado em Settings > General e se os checks obrigatórios passaram."
-          exit 1

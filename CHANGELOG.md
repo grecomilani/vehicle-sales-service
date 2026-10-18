@@ -11,6 +11,9 @@ seção `[Unreleased]` é convertida na nova versão.
 
 ## [Unreleased]
 
+### Changed
+- Pipeline: o job `auto-pull-request` só abre o PR (`feature/*` → `develop` e `develop` → `main`) depois que todos os jobs de verificação passam e não faz mais merge automático; o merge passa a ser manual. A opção *Allow auto-merge* do repositório deixa de ser necessária.
+
 ### Added
 - Análise de qualidade no SonarQube Cloud (organização `grecomilani`, projeto `grecomilani_vehicle-sales-service`) no job de build do CI, com a cobertura do JaCoCo (`target/site/jacoco/jacoco.xml`). Roda em pull requests e nos pushes em `develop`/`main`; exige o secret `SONAR_TOKEN`.
 
