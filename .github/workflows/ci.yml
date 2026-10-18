@@ -82,8 +82,6 @@ jobs:
           args: >
             -Dsonar.organization=grecomilani
             -Dsonar.projectKey=grecomilani_vehicle-sales-service
-            -Dsonar.sources=src/main/java
-            -Dsonar.tests=src/test/java
             -Dsonar.java.binaries=target/classes
             -Dsonar.java.test.binaries=target/test-classes
             -Dsonar.java.libraries=/home/runner/.m2/repository/**/*.jar
